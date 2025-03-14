@@ -14,6 +14,14 @@
 
 \usepackage{url} % for typesetting urls
 
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+\usepackage{float}
+
+
 %
 %  We don't want figures to float so we define
 %
@@ -22,8 +30,8 @@
 
 %% These are standard LaTeX definitions for the document
 %%                            
-\title{The Title}
-\author{The }
+\title{Reinforcement Learning}
+\author{James Thompson}
 
 %% This file can be used for creating a wide range of reports
 %%  across various Schools
@@ -44,6 +52,7 @@
 % You should specifiy your supervisor here with
 %     \supervisor{Firstname Lastname}
 % use \supervisors if there is more than one supervisor
+\supervisor{Dr Aaron Chen}
 
 % Unless you've used the bschonscomp or mcompsci
 %  options above use
@@ -52,7 +61,7 @@
 \otherdegree{Master of Artificial Intelligence}
 
 % Comment this out if you want the date printed.
-\date{}
+\date{\today}
 
 \begin{document}
 
@@ -65,7 +74,7 @@
 
 \begin{abstract}
 
-A short description of the project goes here.
+This is submitted for the completion of AIML440 Directed individual study as part of the Master of Artificial Intelligence programme at Victoria University of Wellington. In this report I will start with a introduction of reinforcement learning and explore some common modern algorithms. In the second part I will evaluate these common algorithms on a varied benchmark. Lastly I will propose extensions that improve the performance on introduced benchmarks.
 
 \end{abstract}
 
@@ -73,7 +82,8 @@ A short description of the project goes here.
 
 \maketitle
 
-\include{acknowledge}
+% Removed because I have no acknowledgements
+% \include{acknowledge}
 
 \tableofcontents
 
@@ -88,8 +98,7 @@ A short description of the project goes here.
 
 % individual chapters included here
 \include{introduction}
-\include{using}
-\include{example}
+\include{algorithms}
 \include{conclusion}
 
 
@@ -102,7 +111,7 @@ A short description of the project goes here.
 
 %\bibliographystyle{ieeetr}
 \bibliographystyle{acm}
-\bibliography{sample}
+\bibliography{AIML440}
 
 
 \end{document}

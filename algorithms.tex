@@ -1,0 +1,211 @@
+\chapter{Algorithms}\label{C:algorithms}
+
+In the real world we don't get access to the transition function of the MDP. The agents only method to learn is through interacting with the environment. From this interaction we get a sample of the environment and must learn from it. Therefore stochastic learning methods must be used. Two learning ideas are core for many reinforcement learning algorithms. These are Monte Carlo \cite{suttonReinforcementLearningSecond2018} and Temporal Difference learning \cite{suttonTemporalCreditAssignment1984} \cite{suttonLearningPredictMethods1988}.
+
+\subsection{Traditional algorithms}
+
+Monte Carlo learning works by estimating the value function as being the average return from that state.  A basic algorithm would look like this.
+
+\begin{algorithm}
+\caption{Monte Carlo Control with Exploring Starts}
+\begin{algorithmic}[1]
+\State Arbitrarily initialize $\pi(s) \in \mathcal{A}(s)$ and $Q(s,a) \in \mathbb{R}$
+\State $\text{Returns}(S,A) \gets$ empty list
+\For{each episode}
+    \State Arbitrarily choose $S_0 \in \mathcal{S}, A_0 \in \mathcal{A}$
+    \State Generate an episode by following $\pi$
+    \State $G \gets 0$
+    \For{each step of the episode $t = T-1, T-2, \dots, 0$}
+        \State $G \gets \gamma G + R_{t+1}$
+        \If{$(S_t, A_t)$ does not appear earlier in the episode}
+            \State Append $G$ to $\text{Returns}(S_t, A_t)$
+            \State $Q(S_t, A_t) \gets \text{average}(\text{Returns}(S_t, A_t))$
+            \State $\pi(S_t) \gets \arg\max_{a} Q(S_t, a)$
+        \EndIf
+    \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+Because we need a well defined return Monte Carlo methods only work on episodic tasks. It will only update the states that it actually visits, therefore it has the advantage that we can force it to explore just the state space we are interested in, by starting it in states we want to know about.
+
+Temporal difference learning works different incrementally updating the value of a state with the received reward and the value of the next state. As the update is using its own estimate it is *bootstrapping*. Because of this bootstrapping it can work with both episodic and continuing environments.
+
+\begin{equation}
+V(S_{t})=R_{t+1}+\gamma V(S_{t+1})
+\end{equation}
+
+Below is a basic implementation of TD learning for a continuing environment, however one can see how you could easily make it just go on forever in an continuing environment.
+
+\begin{algorithm}
+\caption{TD(0)}
+\begin{algorithmic}[1]
+\State Initialize $Q(s,a)$ arbitrarily and set $Q(\text{terminal-state}) = 0$
+\State Initialize $S$
+\While{not converged}
+    \State Take action $A$, observe $R$, $S'$
+    \State Choose $A' \in \mathcal{A}(S')$ using policy derived from $Q$
+    \State $Q(S,A) \gets Q(S,A) + \alpha \left[ R + \gamma Q(S', A') - Q(S,A) \right]$
+    \State $S \gets S'$; $A \gets A'$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+This particular update is known as TD(0) because it only looks one step into the future. However it can be generalised to be TD(n). One can see that if we had TD($\infty$) we would be back at Monte Carlo
+
+The two methods of TD(n) and Monte carlo can be to get the best of both worlds using TD($\lambda$) methods \cite{suttonLearningPredictMethods1988}.
+
+There are two issues with the Naive methods of TD and Monte Carlo methods mentioned above. This is scalability and exploration.
+
+Firstly with scalability we are storing the action value of a particular state in a large lookup table. This will immediately become a problem when dealing with large state or action spaces. Most real world application have tremendously large state/action spaces. Furthermore it is easy to imagine how most of the states have overlapping information and are actually really quite similar. Therefore instead of learning $Q$ directly we can try and learn an appropriator $\hat{Q}$.
+
+Second problem is exploration. As we learn we are finding better and better actions. These better action are taken which will form our trajectory. What can happen here is that we miss large chunks of the state space. To solve this we can instead use a sub optimal policy that deliberately takes exploratory actions. $\epsilon$-greedy is a good example of this as it will take a random action with probability $\epsilon$ and an optimal action the rest of the time. Alternatively you can use a different exploration policy to interact with the environment while you are learning the optimal. This method of learning from experience using a different policy is called off-policy learning. The previous methods we looked at are both on-policy.
+
+\subsection{Modern Deep learning algorithms}\label{sec:MDLA}
+
+\subsubsection{Deep Q Networks}
+\label{subsec:DQN}
+
+One can take the TD(0) learning algorithm and apply the notion of off-policy learning we get SARSAMAX otherwise known as Q-Learning \cite{watkinsLearningDelayedReward1989} \cite{watkinsQlearning1992} . It works almost the same except the action value function is updated using the best possible action taken at the next state.
+
+\begin{equation}
+Q(S_{t}, A_{t}) \leftarrow Q(S_{t}, A_{t}) + \alpha \left( R_{t+1}+\gamma \max_{a} Q(S_{t+1}, a) - Q(S_{t}, A_{t}) \right) 
+\end{equation}
+
+As with TD(0) this fails when faced with a sufficiently large state and/or action space. To resolve this we can use a function approximator, which means we no longer need to store a mapping for every single state. The most powerful function approximators we have are neural networks \cite{hornikMultilayerFeedforwardNetworks1989}. Therefore we can apply a neural network as an approximator $\hat{Q}$ for $Q$. The algorithm we get is called Deep-Q-Learning \cite{mnihPlayingAtariDeep2013}\cite{mnihHumanlevelControlDeep2015}. It was applied very successfully to match and exceed human level performance on a large variety of Atari 2600 games (Space invaders, pong etc).
+
+Here is the algorithm that Mnih et al used in their papers \cite{mnihPlayingAtariDeep2013} \cite{mnihHumanlevelControlDeep2015}.
+
+\begin{algorithm}
+\caption{Deep Q-Learning (DQN)}
+\begin{algorithmic}[1]
+\State Initialize replay memory $D$ with capacity $N$
+\State Initialize action-value function $Q$ with random weights $\theta$
+\State Initialize target action-value function $\hat{Q}$ with weights $\theta^{-} = 0$
+\For{episode = 1 to $M$}
+    \State Initialize sequence $s_{1} = \{ x_{1} \}$ and preprocessed sequence $\phi_{1} = \phi(s_{1})$
+    \For{$t = 1$ to $T$}
+        \State With probability $\epsilon$, select a random action $a_{t}$
+        \State Otherwise, select $a_{t} = \arg\max\limits_{a} Q(\phi(s_{t}), a; \theta)$
+        \State Observe reward $r_{t}$ and next state $x_{t+1}$
+        \State Set $s_{t+1} = (s_{t}, a_{t}, x_{t+1})$ and preprocess $\phi_{t+1} = \phi(s_{t+1})$
+        \State Store transition $(\phi_{t}, a_{t}, r_{t}, \phi_{t+1})$ in $D$
+        \State Sample random minibatch of transitions $(\phi_{j}, a_{j}, r_{j}, \phi_{j+1})$ from $D$
+        \State Set $\gamma_{j} \gets$
+        \[
+        \begin{cases} 
+        r_j, & \text{if episode terminates at step } j+1 \\
+        r_{j} + \gamma \max\limits_{a'} \hat{Q}(\phi_{j+1}, a'; \theta^{-}), & \text{otherwise}
+        \end{cases}
+        \]
+        \State Perform a gradient descent step on 
+        \[
+        \left( \gamma_{j} - Q(\phi_{j}, a_{j}; \theta) \right)^{2}
+        \]
+        \State Every $C$ steps, reset $\hat{Q} \gets Q$
+    \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+There are more features of this algorithm that are different than traditional Q-learning. These are important to solve problems the arise when you add a neural network approximator into the learning process of Q-learning.
+
+The first of these ideas is called experience replay \cite{10.5555/168871}, which is collecting your experience in a replay memory $D$. Then to learn you can loop through your experience and extract as much as you can from your previous experiences. The idea in Deep Q-learning is that at each time step rather than updating $\hat{Q}$ with your current experience you update it using a sampled transition from $D$. This helps with an important problem which is that stochastic gradient descent assumes independent and identically distributed data (**i.i.d**). As experience is collected each transition will be dependent on the previous transition and will affect the next transition thus the independent assumption is not held. Thus randomly sampling from $D$ will give you a independent data set. This also makes DQN a off policy learning method
+
+The second assumption is that the training data is identically distributed. Gradient descent is working towards the target $\gamma$. The problem is that the target involves our current prediction, so as we learn a better prediction our target will move. This results in a chase which decreases learning efficiency. The solution to this as seen in the algorithm is fixing $\hat{Q}$ for a fixed number of steps $C$. It uses $\hat{Q}$ in the target $\gamma_{j}$ but then updates $Q$ every $C$ updates. This gives the network a reasonable opportunity to tend towards the target $\gamma_{j}$ while still using a recent estimate of the action value.
+
+Lastly is the concept of pre-processing the state to speed up the learning process. One can decrease the computational complexity of the neural network by simplifying the state using a transformation that in theory doesn't lose the meaningful information. Minh et al used this in their 2013 paper to make the video input; smaller, conform to the ratio their model needed and making it gray scale. We can see that this pre-processing step is the only example of domain specific knowledge that would be needed for an implementation of the algorithm to a task.
+
+\subsubsection{Soft Actor-Critic}\label{subsec:SAC}
+
+The DQN method discussed above, along with TD and MC learning, are all value-based methods. That is, they learn to evaluate how good a current situation is (whether that be a state or state-action), and then a policy can be generated by maximizing over the value function. Another approach is to directly learn the policy function. A combination of these ideas leads to the actor-critic framework.
+
+In an actor-critic framework, there is a policy that controls how the agent acts, $\pi$, as well as a value function that evaluates how good the action taken was. A good way to update the policy is based on whether the result was better or worse than what the critic expected. Using the TD error of the critic for this is called A2C \cite{mnihAsynchronousMethodsDeep2016}.
+
+However, there are still challenges in expanding A2C to high-dimensional continuous control tasks. Many current methods are difficult to stabilize and require carefully tuned hyperparameters. To address this, several improvements can be introduced to the actor-critic framework, resulting in Soft Actor-Critic (SAC) \cite{haarnojaSoftActorCriticOffPolicy2018}.
+
+First, similar to DQN \cite{mnihPlayingAtariDeep2013, mnihHumanlevelControlDeep2015}, making it off-policy allows for much better sampling efficiency as more information is extracted from experience. More importantly, SAC employs entropy maximization. Traditional RL agents aim to maximize the expected sum of rewards. However, the maximum entropy RL framework modifies this objective to maximize both the expected reward and the entropy of the policy, leading to the following objective function:
+
+\begin{equation}
+J(\pi) = \sum_{t=0}^{T} \mathbb{E}_{(s_{t}, a_{t}) \sim \rho_{\pi}} \left[ r(s_{t}, a_{t}) + \alpha \mathcal{H}(\pi(\cdot|s_{t})) \right] 
+\end{equation}
+
+This entropy term encourages exploration, with the temperature parameter $\alpha$ determining the strength of this encouragement. Initially a hyperparameter in \cite{haarnojaSoftActorCriticOffPolicy2018}, the SAC algorithm was later modified to learn and adjust $\alpha$ throughout training \cite{haarnojaSoftActorCriticAlgorithms2019}. This not only improves efficiency—since choosing an optimal temperature is task-dependent and non-trivial \cite{haarnojaSoftActorCriticAlgorithms2019}—but also allows the policy to explore uncertain regions while being more exploitative in familiar areas.
+
+The final SAC algorithm \cite{haarnojaSoftActorCriticAlgorithms2019} is as follows:
+
+\begin{algorithm}[H]
+\caption{Soft Actor-Critic Algorithm}
+\begin{algorithmic}[1]
+\State \textbf{Input:} $\theta_{1}, \theta_{2}, \phi$
+\State $\bar{\theta_{1}} \gets \theta_{1}, \bar{\theta_{2}} \gets \theta_{2}$
+\State $\mathcal{D} \gets \emptyset$
+\For{each iteration}
+    \For{each environment step}
+        \State Sample action: $a_{t} \sim \pi_{\phi}(a_{t} | s_{t})$
+        \State Sample next state: $s_{t+1} \sim p(s_{t+1} | s_{t}, a_{t})$
+        \State Store transition: $\mathcal{D} \gets \mathcal{D} \cup (s_{t}, a_{t}, r(s_{t}, a_{t}), s_{t+1})$
+    \EndFor
+    \For{each gradient step}
+        \State Update Q-functions: $\theta_{i} \gets \theta_{i} - \lambda_{Q} \hat{\nabla}_{\theta_{i}} J_{Q}(\theta_{i})$ for $i \in \{1,2\}$
+        \State Update policy: $\phi \gets \phi - \lambda_{\pi} \hat{\nabla}_{\phi} J_{\pi}(\phi)$
+        \State Update entropy coefficient: $\alpha \gets \alpha - \lambda \hat{\nabla}_{\alpha} J(\alpha)$
+        \State Update target Q-networks: $\bar{\theta_{i}} \gets \tau\theta_{i} + (1 - \tau) \bar{\theta_{i}}$ for $i \in \{1,2\}$
+    \EndFor
+\EndFor
+\State \textbf{Output:} $\theta_{1}, \theta_{2}, \phi$
+\end{algorithmic}
+\end{algorithm}
+
+One noteworthy difference from conventional actor-critic methods is that SAC uses two Q-functions. While not strictly necessary, this significantly speeds up training \cite{haarnojaSoftActorCriticAlgorithms2019}.
+
+Between 2018 and 2019, when SAC was first introduced, it outperformed other popular methods such as TD3 \cite{fujimotoAddressingFunctionApproximation2018}, DDPG \cite{lillicrapContinuousControlDeep2019}, and PPO \cite{schulmanProximalPolicyOptimization2017} in continuous control benchmarks.
+
+\subsubsection{Proximal Polixy Optimizatin}\label{subsec:PPO}
+
+One of the problems that can happen with policy changes is that a small change which results in a different actions being taken can have large consequences. A natural idea is to try and limit the changes that can happen to policy at any step. You can do this by using a surrogate objective function that is limited to be at least somewhat similar to the current policy. This was first implemented using a trust region (i.e an area that we can safely move the policy and is guranteed to improve) and resulted in the TRPO algorithm \cite{schulmanTrustRegionPolicy2017}. Yet the most popular method is that of PPO \cite{schulmanProximalPolicyOptimization2017}, as it is computationally simpler. The method used in PPO is to use a clipped objective which results in a loss function like so:
+$$
+L^{\text{CLIP}}(s,a,\theta_k,\theta) = \min\left(
+\frac{\pi_{\theta}(a|s)}{\pi_{\theta_k}(a|s)}  A^{\pi_{\theta_k}}(s,a), \;\;
+\text{clip}\left(\frac{\pi_{\theta}(a|s)}{\pi_{\theta_k}(a|s)}, 1 - \epsilon, 1+\epsilon \right) A^{\pi_{\theta_k}}(s,a)
+\right)
+$$
+
+Where the advantage function ($A^{\pi_{\theta_{k}}}(s,a)$) is a way of measuring how much better the situation is than expected. The ratio $\frac{\pi_{\theta}(a|s)}{\pi_{\theta_{k}}(a|s)}$ is used to measure the difference between the current policy and the old policy. This ratio is what is clipped and used as a scalar for the advantage function. As we see in the situation that the action was better ($A>0$) the clip function will apply and make sure that $L$ wont be too large, however it can be as small as 0. In the other case when things were worse than expected ($A < 0$) it capped to make $L$ not close to zero (note that $L$ will be negative), yet $L$ could be as large (in the negative sense) as it would like. The reasoning is that allowing for these large and negative $L$ means that we can do a better job of making sure that this action is not taken again.
+
+The advantage function can be can be estimated in many ways . A simple advantage function could be actual return - estimated return ($G_{t} - V(s_{t})$) for episodic tasks, or TD error ($r_{t}+\gamma V(s_{t+1})-V(s_{t})$) for continuing tasks. The implementation in the paper use generalised advantage estimation which is an exponentially weighted sum of TD errors \cite{schulmanHighDimensionalContinuousControl2015}, as it better balances bias and variance. GAE is defined as:
+
+$$
+\hat{A_{t}}^{GAE(\gamma, \lambda)} = \sum_{t=0}^{\infty}(\gamma\lambda)^{l}\delta_{t+l}^{V}
+$$
+Where $\delta_{t}^{V}=r_{t}+\gamma V(s_{t}+1)-V(s_{t})$. $\gamma$ is the usual discounting factor but this is expanded on with $\lambda$ which is from 0-1, at 0 it is TD(0) error and at 1 would be the full complete return.
+
+With this advantage estimator we need to learn a value function. This puts PPO in the same style of actor-critic methods. It is however regarded as a Policy gradient method starting with the author Schulman designating it so.
+
+The CLIP loss function can be augmented with other objectives to increase its effectiveness. For example using entropy maximisation to encourage exploring like what is done above with \ref{subsec:SAC}. This leads to this objective:
+$$
+L^{\text{CLIP} + S}(s, a, \theta_{k, }\theta)=\hat{\mathbb{E}}_{t}\left[ L^{\text{CLIP}}(s,a, \theta_{k, }\theta)+cS\left[ \pi_{\theta}\right](s)  \right] 
+$$
+Where $S$ is the entropy of the policy. There is a large space of exploring different surrogate objective functions which incorporate the CLIP function.
+
+Here is a reference version of the algorithm from Open AI's spinning up documentation \cite{openaiProximalPolicyOptimization2020}:
+
+\begin{algorithm}
+\caption{PPO Algorithm}
+\begin{algorithmic}[1]
+\State \textbf{Input:} initial policy parameters $\theta_{0}$, initial value function parameters $\phi_{0}$
+\For{$k = 0, 1, 2, \dots$}
+    \State Collect set of trajectories $\mathcal{D}_{k} = \{\tau_{i}\}$ by running policy $\pi_{k} = \pi(\theta_{k})$ in the environment.
+    \State Compute rewards to go $\hat{R}_{t}$ (This is an estimate of the return $R_{t}$ for each state in the trajectories)
+    \State Compute advantage estimates $\hat{A}_{t}$ (using any method of advantage estimation) based on the current value function $V_{\phi_{k}}$
+    \State Update the policy by maximizing the PPO-CLIP objective:
+    $$
+    \theta_{k+1} = \arg \max_{\theta} \frac{1}{|\mathcal{D}_{k}|T}\sum_{\tau \in  \mathcal{D}_{k}} \sum_{t=0}^{T} \min \left( \frac{\pi_{\theta}(a_{t}|s_{t})}{\pi_{\theta_{k}}(a_{t}|s_{t})} A^{\pi_{\theta_{k}}}(s_{t}, a_{t}), \text{clip} \left( \frac{\pi_{\theta}(a_{t}|s_{t})}{\pi_{\theta_{k}}(a_{t}|s_{t})}, 1-\epsilon, 1+\epsilon  \right) A^{\pi_{\theta_{k}}}  \right)
+    $$
+    \State Fit value function by regression on mean-squared error:
+    $$
+    \phi_{k+1} = \arg \min_{\phi} \frac{1}{|\mathcal{D}_{k}|T}\sum_{\tau \in  \mathcal{D}_{k}} \sum_{t=0}^{T} (V_{\phi}(s_{t})-\hat{R}_{t})^{2}
+    $$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
