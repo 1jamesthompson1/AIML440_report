@@ -4,6 +4,11 @@ In the real world we don't get access to the transition function of the MDP. The
 
 \subsection{Traditional algorithms}
 
+\subsubsection{Value Based Methods}
+
+As mentioned earlier value based method focus on learning a value function and from that function we can derive a policy. The action value function is more powerful as simply knowing the value of a state is not enough to make a decision. The action value function is defined as the expected return given a state and action. Thus all you need to do is take the action that gives you the maximum $Q$ value.
+
+
 Monte Carlo learning works by estimating the value function as being the average return from that state.  A basic algorithm would look like this.
 
 \begin{algorithm}
@@ -27,15 +32,16 @@ Monte Carlo learning works by estimating the value function as being the average
 \end{algorithmic}
 \end{algorithm}
 
-Because we need a well defined return Monte Carlo methods only work on episodic tasks. It will only update the states that it actually visits, therefore it has the advantage that we can force it to explore just the state space we are interested in, by starting it in states we want to know about.
+Because we need a well defined return Monte Carlo methods only work on episodic tasks. It will only update the states that it actually visits. This gives us the option of just exploring the state space area we are interested in learning about.
 
-Temporal difference learning works different incrementally updating the value of a state with the received reward and the value of the next state. As the update is using its own estimate it is *bootstrapping*. Because of this bootstrapping it can work with both episodic and continuing environments.
+Temporal difference learning works different incrementally updating the value of a state with the received reward and the value of the next state \ref{eq:TDupdate}. As the update is using its own estimate it is \textit{bootstrapping}. Because of bootstrapping it can work with both episodic and continuing environments.
 
 \begin{equation}
 V(S_{t})=R_{t+1}+\gamma V(S_{t+1})
+\label{eq:TDupdate}
 \end{equation}
 
-Below is a basic implementation of TD learning for a continuing environment, however one can see how you could easily make it just go on forever in an continuing environment.
+Below is a basic implementation of TD learning for a continuing environment, however it is easy to change it to episdoic by changing the loop to be over episodes.
 
 \begin{algorithm}
 \caption{TD(0)}
@@ -51,7 +57,7 @@ Below is a basic implementation of TD learning for a continuing environment, how
 \end{algorithmic}
 \end{algorithm}
 
-This particular update is known as TD(0) because it only looks one step into the future. However it can be generalised to be TD(n). One can see that if we had TD($\infty$) we would be back at Monte Carlo
+This particular update is known as TD(0) because it only looks one step into the future. However it can be generalised to be TD(n). One can see that if we had TD($\infty$) we would be back at Monte Carlo if working in episodic tasks.
 
 The two methods of TD(n) and Monte carlo can be to get the best of both worlds using TD($\lambda$) methods \cite{suttonLearningPredictMethods1988}.
 
@@ -60,6 +66,28 @@ There are two issues with the Naive methods of TD and Monte Carlo methods mentio
 Firstly with scalability we are storing the action value of a particular state in a large lookup table. This will immediately become a problem when dealing with large state or action spaces. Most real world application have tremendously large state/action spaces. Furthermore it is easy to imagine how most of the states have overlapping information and are actually really quite similar. Therefore instead of learning $Q$ directly we can try and learn an appropriator $\hat{Q}$.
 
 Second problem is exploration. As we learn we are finding better and better actions. These better action are taken which will form our trajectory. What can happen here is that we miss large chunks of the state space. To solve this we can instead use a sub optimal policy that deliberately takes exploratory actions. $\epsilon$-greedy is a good example of this as it will take a random action with probability $\epsilon$ and an optimal action the rest of the time. Alternatively you can use a different exploration policy to interact with the environment while you are learning the optimal. This method of learning from experience using a different policy is called off-policy learning. The previous methods we looked at are both on-policy.
+
+\subsubsection{Policy Based Methods}
+
+A different way of the approaching the problem is by learning the policy directly without a learning a concept of how good a state is. The most common policy based method is called policy gradient methods \cite{suttonPolicyGradientMethods1999}. To use policy gradient methods you need to parametize the policy $pi$ in any way as long as $pi(a|s, \theta)$ is differentiable with respect to $\theta$.
+
+The first of these policy gradient methods was the Reinforce algorithm \cite{williamsSimpleStatisticalGradientfollowing1992}. It is a Monte Carlo policy gradient method. The updates are made by moving the policy in the direction of the gradient of the log probability of the action taken. This works because it is proportional to the return which is given to use by the policy gradient theorem \cite{suttonPolicyGradientMethods1999}.
+
+\begin{algorithm}
+\caption{REINFORCE: Monte-Carlo Policy-Gradient Control (episodic) for $\pi_*$}
+\begin{algorithmic}[1]
+\Require A differentiable policy parameterization $\pi(a|s, \theta)$
+\Require Step size $\alpha > 0$
+\State Initialize policy parameter $\theta \in \mathbb{R}^d$ (e.g., to 0)
+\Loop
+  \State Generate an episode $S_0, A_0, R_1, \ldots, S_{T-1}, A_{T-1}, R_T$, following $\pi(\cdot|\cdot, \theta)$
+  \For{$t = 0, 1, \ldots, T-1$}
+    \State $G \leftarrow \sum_{k=t+1}^{T} \gamma^{k-t-1} R_k$
+    \State $\theta \leftarrow \theta + \alpha \gamma^t G \nabla \ln \pi(A_t|S_t, \theta)$
+  \EndFor
+\EndLoop
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Modern Deep learning algorithms}\label{sec:MDLA}
 
@@ -76,7 +104,7 @@ As with TD(0) this fails when faced with a sufficiently large state and/or actio
 
 Here is the algorithm that Mnih et al used in their papers \cite{mnihPlayingAtariDeep2013} \cite{mnihHumanlevelControlDeep2015}.
 
-\begin{algorithm}
+\begin{algorithm}[H]
 \caption{Deep Q-Learning (DQN)}
 \begin{algorithmic}[1]
 \State Initialize replay memory $D$ with capacity $N$
@@ -183,9 +211,11 @@ Where $\delta_{t}^{V}=r_{t}+\gamma V(s_{t}+1)-V(s_{t})$. $\gamma$ is the usual d
 With this advantage estimator we need to learn a value function. This puts PPO in the same style of actor-critic methods. It is however regarded as a Policy gradient method starting with the author Schulman designating it so.
 
 The CLIP loss function can be augmented with other objectives to increase its effectiveness. For example using entropy maximisation to encourage exploring like what is done above with \ref{subsec:SAC}. This leads to this objective:
-$$
+
+\begin{equation}
 L^{\text{CLIP} + S}(s, a, \theta_{k, }\theta)=\hat{\mathbb{E}}_{t}\left[ L^{\text{CLIP}}(s,a, \theta_{k, }\theta)+cS\left[ \pi_{\theta}\right](s)  \right] 
-$$
+\end{equation}
+
 Where $S$ is the entropy of the policy. There is a large space of exploring different surrogate objective functions which incorporate the CLIP function.
 
 Here is a reference version of the algorithm from Open AI's spinning up documentation \cite{openaiProximalPolicyOptimization2020}:
@@ -206,6 +236,38 @@ Here is a reference version of the algorithm from Open AI's spinning up document
     $$
     \phi_{k+1} = \arg \min_{\phi} \frac{1}{|\mathcal{D}_{k}|T}\sum_{\tau \in  \mathcal{D}_{k}} \sum_{t=0}^{T} (V_{\phi}(s_{t})-\hat{R}_{t})^{2}
     $$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Twin Delayed Deep Deterministic Policy Gradient}\label{subsec:TD3}
+
+Twin Delayed Deep Deterministic Policy Gradient \cite{fujimotoAddressingFunctionApproximation2018} is a variant of DDPG \cite{lillicrapContinuousControlDeep2016} that builds on Double Q-Learning \cite{hasseltDeepReinforcementLearning2015}. It is a actor critic method that uses experience replay, target networks and policy noise to stabilise learning. The main idea is to use two critics to estimate the value of the action taken and then use the minimum of the two to update the policy. This is to reduce the overestimation bias that can happen in Q-learning methods.
+
+The policy noise is not seen in the other algorithms mentioned above. The clipped policy noise in the critic target is used to make sure that the critics aren't overfitting to peaks. This works on the intuition that simliar actions should have similar values.
+
+The algorithm from the original paper \cite{fujimotoAddressingFunctionApproximation2018} is as follows:
+
+\begin{algorithm}[H]
+\caption{Twin Delayed Deep Deterministic Policy Gradient (TD3)}
+\begin{algorithmic}[1]
+\State Initialize critic networks $Q_{\theta_1}$, $Q_{\theta_2}$, and actor network $\pi_{\phi}$ with random parameters $\theta_1$, $\theta_2$, $\phi$
+\State Initialize target networks $\theta'_1 \leftarrow \theta_1$, $\theta'_2 \leftarrow \theta_2$, $\phi' \leftarrow \phi$
+\State Initialize replay buffer $\mathcal{B}$
+\For{$t = 1$ \textbf{to} $T$}
+    \State Select action with exploration noise $a \sim \pi_{\phi}(s) + \epsilon$, $\epsilon \sim \mathcal{N}(0, \sigma)$ and observe reward $r$ and new state $s'$
+    \State Store transition tuple $(s, a, r, s')$ in $\mathcal{B}$
+    \State Sample mini-batch of $N$ transitions $(s, a, r, s')$ from $\mathcal{B}$
+    \State $\tilde{a} \leftarrow \pi_{\phi'}(s') + \epsilon$, $\epsilon \sim \text{clip}(\mathcal{N}(0, \tilde{\sigma}), -c, c)$
+    \State $y \leftarrow r + \gamma \min_{i=1,2} Q_{\theta'_i}(s', \tilde{a})$
+    \State Update critics $\theta_i \leftarrow \arg\min_{\theta_i} N^{-1} \sum(y - Q_{\theta_i}(s, a))^2$
+    \If{$t \bmod d$}
+        \State Update $\phi$ by the deterministic policy gradient:
+        \State $\nabla_{\phi}J(\phi) = N^{-1} \sum \nabla_a Q_{\theta_1}(s, a)|_{a=\pi_{\phi}(s)} \nabla_{\phi}\pi_{\phi}(s)$
+        \State Update target networks:
+        \State $\theta'_i \leftarrow \tau\theta_i + (1 - \tau)\theta'_i$
+        \State $\phi' \leftarrow \tau\phi + (1 - \tau)\phi'$
+    \EndIf
 \EndFor
 \end{algorithmic}
 \end{algorithm}

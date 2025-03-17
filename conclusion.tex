@@ -1,2 +1,31 @@
 \chapter{Conclusions}\label{C:con}
-The conclusions are presented in this Chapter.
+
+Reinforcement Learning is a powerful framework for learning how to act. With the recent advancements with deep learning and the resultant Deep reinforcement learning algorithms have shown that the potential of the framework is vast. In this report I have covered the basics of reinforcement learning and the algorithms that are used to solve the problem. I have also evaluated the state of the art algorithms and shown that they are capable of solving complex problems. 
+
+There are many ways of splitting the field of reinforcement learning. The binary splits we have looked at are model based and model free, value based and policy based and on policy and off policy. However the different solutions can merge the boundary between these splits. For example actor critic methods are explicitly both value based and policy based.
+
+
+
+\begin{table}[h]
+    \footnotesize
+    \centering
+    \renewcommand{\arraystretch}{1.4} % Increases row spacing for readability
+    \begin{tabularx}{\textwidth}{p{1.3cm} X X X X}
+        \hline
+        \textbf{Feature} & \textbf{DQN} & \textbf{SAC} & \textbf{PPO} & \textbf{TD3} \\
+        \hline
+        \textbf{Algorithm type}       & Value based      & Actor-critic         & Policy based               & Actor-critic  \\
+        \textbf{Policy learning}      & Off policy        & Off policy           & On policy            & Off policy    \\
+        \textbf{Learnt policy}        & Deterministic     & Stochastic           & Stochastic           & Deterministic \\
+        \textbf{Exploration strategy} & $\epsilon$-greedy & entropy maximisation & entropy maximisation & noise         \\
+        \textbf{Action space}         & Discrete          & Continuous           & Both                 & Continuous    \\
+        \textbf{Extra features} & Experience replay, ensemble Q-functions & Experience replay, ensemble Q-functions & - & Experience replay \\
+        \hline
+    \end{tabularx}
+    \caption{Differences between modern deep reinforcement learning algorithms.}
+\end{table}
+
+
+The presented models have been used to successfully solve many problems. For example SAC derivatives have been used to teach a 4 legged robot to walk in just 20 minutes \cite{smithWalkParkLearning2022}. Or a scaled up PPO algorithm beating world champions at Dota 2 \cite{openaiDota2Large2019}. These are just two examples of the power of reinforcement learning, which gives credit and support to Richards Sutton's reward hypothesis \cite{suttonReinforcementLearningSecond2018}.
+
+The possibilities of future work are vast and varied. There is unknown potential in applying the current algorithms to new problems. There is also the potential of creating new algorithms that improve on the current state of the art. Some of the current limitations of the algorithms are the sample efficiency and the stability of the algorithms. Furthermore there is the larger problem of generalisation and how different on an environment can agent act well without retraining.
