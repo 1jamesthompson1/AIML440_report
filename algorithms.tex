@@ -102,35 +102,38 @@ Q(S_{t}, A_{t}) \leftarrow Q(S_{t}, A_{t}) + \alpha \left( R_{t+1}+\gamma \max_{
 
 As with TD(0) this fails when faced with a sufficiently large state and/or action space. To resolve this we can use a function approximator, which means we no longer need to store a mapping for every single state. The most powerful function approximators we have are neural networks \cite{hornikMultilayerFeedforwardNetworks1989}. Therefore we can apply a neural network as an approximator $\hat{Q}$ for $Q$. The algorithm we get is called Deep-Q-Learning \cite{mnihPlayingAtariDeep2013}\cite{mnihHumanlevelControlDeep2015}. It was applied very successfully to match and exceed human level performance on a large variety of Atari 2600 games (Space invaders, pong etc).
 
-Here is the algorithm that Mnih et al used in their papers \cite{mnihPlayingAtariDeep2013} \cite{mnihHumanlevelControlDeep2015}.
+Here is the algorithm that Mnih et al used in their papers \cite{mnihPlayingAtariDeep2013} \cite{mnihHumanlevelControlDeep2015}, with some notational differences to make it more explicit.
 
 \begin{algorithm}[H]
 \caption{Deep Q-Learning (DQN)}
 \begin{algorithmic}[1]
-\State Initialize replay memory $D$ with capacity $N$
-\State Initialize action-value function $Q$ with random weights $\theta$
-\State Initialize target action-value function $\hat{Q}$ with weights $\theta^{-} = 0$
-\For{episode = 1 to $M$}
-    \State Initialize sequence $s_{1} = \{ x_{1} \}$ and preprocessed sequence $\phi_{1} = \phi(s_{1})$
-    \For{$t = 1$ to $T$}
+\Require{Number of episodes $M$, replay memory capacity $N$, minibatch size $K$, discount factor $\gamma$, learning rate $\alpha$, update frequency $C$, exploration probability $\epsilon$. A neural network function approximiator$Q$}
+\State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
+\State Initialize action-value function $Q_{\theta}$ with random weights $\theta$
+\State Initialize target action-value function $\hat{Q_{\theta^{-}}}$ with weights $\theta^{-} \leftarrow 0$
+\For{episode in range(1, $M$)}
+    \State Initialize sequence $s_{1} \leftarrow \{ x_{1} \}$ and preprocessed sequence $\phi_{1} \leftarrow \phi(s_{1})$
+    \For{each step $t$ in episode}
         \State With probability $\epsilon$, select a random action $a_{t}$
-        \State Otherwise, select $a_{t} = \arg\max\limits_{a} Q(\phi(s_{t}), a; \theta)$
+        \State Otherwise, select $a_{t} \leftarrow \arg\max\limits_{a} Q(\phi(s_{t}), a; \theta)$
         \State Observe reward $r_{t}$ and next state $x_{t+1}$
-        \State Set $s_{t+1} = (s_{t}, a_{t}, x_{t+1})$ and preprocess $\phi_{t+1} = \phi(s_{t+1})$
-        \State Store transition $(\phi_{t}, a_{t}, r_{t}, \phi_{t+1})$ in $D$
-        \State Sample random minibatch of transitions $(\phi_{j}, a_{j}, r_{j}, \phi_{j+1})$ from $D$
-        \State Set $\gamma_{j} \gets$
-        \[
-        \begin{cases} 
-        r_j, & \text{if episode terminates at step } j+1 \\
-        r_{j} + \gamma \max\limits_{a'} \hat{Q}(\phi_{j+1}, a'; \theta^{-}), & \text{otherwise}
-        \end{cases}
-        \]
-        \State Perform a gradient descent step on 
-        \[
-        \left( \gamma_{j} - Q(\phi_{j}, a_{j}; \theta) \right)^{2}
-        \]
-        \State Every $C$ steps, reset $\hat{Q} \gets Q$
+        \State Set $s_{t+1} \leftarrow (s_{t}, a_{t}, x_{t+1})$ and preprocess $\phi_{t+1} \leftarrow \phi(s_{t+1})$
+        \State Store transition $(\phi_{t}, a_{t}, r_{t}, \phi_{t+1})$ in $\mathcal{D}$
+        \State Sample random minibatch $B$ of size $K$ of transitions from $\mathcal{D}$
+        \For{each transition $(\phi_{j}, a_{j}, r_{j}, \phi_{j+1})$ in $B$}
+            \[
+            y_j \leftarrow \begin{cases} 
+            r_j, & \text{if episode terminates at step } j+1 \\
+            r_{j} + \gamma \max\limits_{a'} \hat{Q}(\phi_{j+1}, a'; \theta^{-}), & \text{otherwise}
+            \end{cases}
+            \]
+            \State Compute loss $L_{j} \leftarrow (y_{j} - Q(\phi_{j}, a_{j}; \theta))^{2}$
+        \EndFor
+        \State Perform gradient descent step on the average loss: $\theta \leftarrow \theta - \alpha \nabla_{\theta} \frac{1}{|B|}\sum_{j} L_{j}$ \Comment{Alternative gradient steps could be used here (e.g Adam was used in the paper)}
+        
+        \If{$t$ mod $C$ == 0}
+            \State Update target network: $\theta^{-} \leftarrow \theta$
+        \EndIf
     \EndFor
 \EndFor
 \end{algorithmic}
@@ -160,28 +163,32 @@ J(\pi) = \sum_{t=0}^{T} \mathbb{E}_{(s_{t}, a_{t}) \sim \rho_{\pi}} \left[ r(s_{
 
 This entropy term encourages exploration, with the temperature parameter $\alpha$ determining the strength of this encouragement. Initially a hyperparameter in \cite{haarnojaSoftActorCriticOffPolicy2018}, the SAC algorithm was later modified to learn and adjust $\alpha$ throughout training \cite{haarnojaSoftActorCriticAlgorithms2019}. This not only improves efficiency—since choosing an optimal temperature is task-dependent and non-trivial \cite{haarnojaSoftActorCriticAlgorithms2019}—but also allows the policy to explore uncertain regions while being more exploitative in familiar areas.
 
-The final SAC algorithm \cite{haarnojaSoftActorCriticAlgorithms2019} is as follows:
+The final SAC algorithm \cite{haarnojaSoftActorCriticAlgorithms2019} modified for clarity is shown below:
 
 \begin{algorithm}[H]
 \caption{Soft Actor-Critic Algorithm}
 \begin{algorithmic}[1]
-\State \textbf{Input:} $\theta_{1}, \theta_{2}, \phi$
-\State $\bar{\theta_{1}} \gets \theta_{1}, \bar{\theta_{2}} \gets \theta_{2}$
-\State $\mathcal{D} \gets \emptyset$
-\For{each iteration}
-    \For{each environment step}
-        \State Sample action: $a_{t} \sim \pi_{\phi}(a_{t} | s_{t})$
-        \State Sample next state: $s_{t+1} \sim p(s_{t+1} | s_{t}, a_{t})$
-        \State Store transition: $\mathcal{D} \gets \mathcal{D} \cup (s_{t}, a_{t}, r(s_{t}, a_{t}), s_{t+1})$
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environemt steps $S$, neural network function approximator $Q$}, neural network function approximator $\pi$ and initial entropy coefficient $\alpha$.
+\State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
+\State Initialize policy $\pi_{\phi}$ with random weights $\phi$
+\State Initialize both action-value function $Q_{\theta_i}$ with random weights 
+$\theta_i$
+\State Initialize $\bar{\theta}_{i} \leftarrow \theta_{i}$ for $i \in \{1,2\}$
+\Repeat
+    \For{ $S$ steps}
+        \State select action: $a_{t} \sim \pi_{\phi}(a_{t} | s_{t})$
+        \State Observe reward $r_{t}$ and next state $s_{t+1}$
+        \State Store transition $(s_{t}, a_{t}, r_{t}, s_{t+1})$ in $\mathcal{D}$
     \EndFor
-    \For{each gradient step}
+    \For{UTD times}
         \State Update Q-functions: $\theta_{i} \gets \theta_{i} - \lambda_{Q} \hat{\nabla}_{\theta_{i}} J_{Q}(\theta_{i})$ for $i \in \{1,2\}$
         \State Update policy: $\phi \gets \phi - \lambda_{\pi} \hat{\nabla}_{\phi} J_{\pi}(\phi)$
         \State Update entropy coefficient: $\alpha \gets \alpha - \lambda \hat{\nabla}_{\alpha} J(\alpha)$
         \State Update target Q-networks: $\bar{\theta_{i}} \gets \tau\theta_{i} + (1 - \tau) \bar{\theta_{i}}$ for $i \in \{1,2\}$
     \EndFor
-\EndFor
-\State \textbf{Output:} $\theta_{1}, \theta_{2}, \phi$
+\Until{stopping criteria is met}
+
+
 \end{algorithmic}
 \end{algorithm}
 
@@ -192,20 +199,22 @@ Between 2018 and 2019, when SAC was first introduced, it outperformed other popu
 \subsubsection{Proximal Polixy Optimizatin}\label{subsec:PPO}
 
 One of the problems that can happen with policy changes is that a small change which results in a different actions being taken can have large consequences. A natural idea is to try and limit the changes that can happen to policy at any step. You can do this by using a surrogate objective function that is limited to be at least somewhat similar to the current policy. This was first implemented using a trust region (i.e an area that we can safely move the policy and is guranteed to improve) and resulted in the TRPO algorithm \cite{schulmanTrustRegionPolicy2017}. Yet the most popular method is that of PPO \cite{schulmanProximalPolicyOptimization2017}, as it is computationally simpler. The method used in PPO is to use a clipped objective which results in a loss function like so:
-$$
+
+\begin{equation}
 L^{\text{CLIP}}(s,a,\theta_k,\theta) = \min\left(
 \frac{\pi_{\theta}(a|s)}{\pi_{\theta_k}(a|s)}  A^{\pi_{\theta_k}}(s,a), \;\;
 \text{clip}\left(\frac{\pi_{\theta}(a|s)}{\pi_{\theta_k}(a|s)}, 1 - \epsilon, 1+\epsilon \right) A^{\pi_{\theta_k}}(s,a)
 \right)
-$$
+\end{equation}
 
 Where the advantage function ($A^{\pi_{\theta_{k}}}(s,a)$) is a way of measuring how much better the situation is than expected. The ratio $\frac{\pi_{\theta}(a|s)}{\pi_{\theta_{k}}(a|s)}$ is used to measure the difference between the current policy and the old policy. This ratio is what is clipped and used as a scalar for the advantage function. As we see in the situation that the action was better ($A>0$) the clip function will apply and make sure that $L$ wont be too large, however it can be as small as 0. In the other case when things were worse than expected ($A < 0$) it capped to make $L$ not close to zero (note that $L$ will be negative), yet $L$ could be as large (in the negative sense) as it would like. The reasoning is that allowing for these large and negative $L$ means that we can do a better job of making sure that this action is not taken again.
 
 The advantage function can be can be estimated in many ways . A simple advantage function could be actual return - estimated return ($G_{t} - V(s_{t})$) for episodic tasks, or TD error ($r_{t}+\gamma V(s_{t+1})-V(s_{t})$) for continuing tasks. The implementation in the paper use generalised advantage estimation which is an exponentially weighted sum of TD errors \cite{schulmanHighDimensionalContinuousControl2015}, as it better balances bias and variance. GAE is defined as:
 
-$$
+\begin{equation}
 \hat{A_{t}}^{GAE(\gamma, \lambda)} = \sum_{t=0}^{\infty}(\gamma\lambda)^{l}\delta_{t+l}^{V}
-$$
+\end{equation}
+
 Where $\delta_{t}^{V}=r_{t}+\gamma V(s_{t}+1)-V(s_{t})$. $\gamma$ is the usual discounting factor but this is expanded on with $\lambda$ which is from 0-1, at 0 it is TD(0) error and at 1 would be the full complete return.
 
 With this advantage estimator we need to learn a value function. This puts PPO in the same style of actor-critic methods. It is however regarded as a Policy gradient method starting with the author Schulman designating it so.
@@ -218,25 +227,43 @@ L^{\text{CLIP} + S}(s, a, \theta_{k, }\theta)=\hat{\mathbb{E}}_{t}\left[ L^{\tex
 
 Where $S$ is the entropy of the policy. There is a large space of exploring different surrogate objective functions which incorporate the CLIP function.
 
-Here is a reference version of the algorithm from Open AI's spinning up documentation \cite{openaiProximalPolicyOptimization2020}:
+Below is the algorithm from the paper \cite{schulmanProximalPolicyOptimization2017} with some modifications to make it clearer.:
 
-\begin{algorithm}
-\caption{PPO Algorithm}
+\begin{algorithm}[H]
+\caption{PPO Algorithm, Actor Critic style}
 \begin{algorithmic}[1]
-\State \textbf{Input:} initial policy parameters $\theta_{0}$, initial value function parameters $\phi_{0}$
-\For{$k = 0, 1, 2, \dots$}
-    \State Collect set of trajectories $\mathcal{D}_{k} = \{\tau_{i}\}$ by running policy $\pi_{k} = \pi(\theta_{k})$ in the environment.
-    \State Compute rewards to go $\hat{R}_{t}$ (This is an estimate of the return $R_{t}$ for each state in the trajectories)
-    \State Compute advantage estimates $\hat{A}_{t}$ (using any method of advantage estimation) based on the current value function $V_{\phi_{k}}$
-    \State Update the policy by maximizing the PPO-CLIP objective:
-    $$
-    \theta_{k+1} = \arg \max_{\theta} \frac{1}{|\mathcal{D}_{k}|T}\sum_{\tau \in  \mathcal{D}_{k}} \sum_{t=0}^{T} \min \left( \frac{\pi_{\theta}(a_{t}|s_{t})}{\pi_{\theta_{k}}(a_{t}|s_{t})} A^{\pi_{\theta_{k}}}(s_{t}, a_{t}), \text{clip} \left( \frac{\pi_{\theta}(a_{t}|s_{t})}{\pi_{\theta_{k}}(a_{t}|s_{t})}, 1-\epsilon, 1+\epsilon  \right) A^{\pi_{\theta_{k}}}  \right)
-    $$
-    \State Fit value function by regression on mean-squared error:
-    $$
-    \phi_{k+1} = \arg \min_{\phi} \frac{1}{|\mathcal{D}_{k}|T}\sum_{\tau \in  \mathcal{D}_{k}} \sum_{t=0}^{T} (V_{\phi}(s_{t})-\hat{R}_{t})^{2}
-    $$
-\EndFor
+\Require{Clipping amount $\epsilon$, Minibatch size $K$, epoch $M$, discount factor $\gamma$, learning rates $\alpha_{\theta}$ and $\alpha_{\phi}$, number of actors $N$, environemt steps $T$, neural network function approximator $V$, neural network function approximator $\pi$ and value function coefficient $c_{1}$ and entropy coefficient $c_{2}$}
+\State Initialize policy $\pi_{\theta}$ and value function $V_{\phi}$ with random weights $\theta$ and $\phi$
+\State $\theta_{old} \leftarrow \theta$
+\Repeat
+    \For{actor = 1, 2, \ldots, N \textbf{ in parallel}}
+        \State Run policy $\pi_{\theta_{old}}$ in environment for $T$ timesteps
+        \State Collect trajectory $(s_t, a_t, r_t, s_{t+1})_{t=0}^{T-1}$
+        \State Compute advantage estimates $\hat{A}_1, \ldots, \hat{A}_T$ using GAE
+        \State Compute returns $\hat{R}_t \leftarrow \sum_{i=t}^{T-1} \gamma^{i-t} r_i$
+    \EndFor
+    
+    \State Combine data from all actors: $\mathcal{D} = \{(s_t^n, a_t^n, \hat{A}_t^n, \hat{R}_t^n)\}$ for $n=1,\ldots,N$ and $t=1,\ldots,T$
+    \For{epoch = 1, 2, \ldots, M}
+        \State Shuffle data $\mathcal{D}$ and split into minibatches of size $K \leq NT$
+        \For{each minibatch $\mathcal{B} \subset \mathcal{D}$}
+            \State For each $(s, a, \hat{A}, \hat{R}) \in \mathcal{B}$:
+            \State \quad Compute ratio $r(\theta) = \frac{\pi_{\theta}(a|s)}{\pi_{\theta_{old}}(a|s)}$
+            \State \quad Compute clipped surrogate objective:
+            \State \quad $L_{clip}(\theta) = \min(r(\theta)\hat{A}, \text{clip}(r(\theta), 1-\epsilon, 1+\epsilon)\hat{A})$
+            \State \quad Compute value function loss:
+            \State \quad $L_{VF}(\phi) = (V_{\phi}(s) - \hat{R})^2$
+            \State \quad Compute entropy bonus:
+            \State \quad $S[\pi_{\theta}](s) = -\sum_a \pi_{\theta}(a|s) \log \pi_{\theta}(a|s)$
+            
+            \State \quad Total objective: $L(\theta, \phi) = \mathbb{E}[L_{clip}(\theta) - c_1 L_{VF}(\phi) + c_2 S[\pi_{\theta}](s)]$
+            
+            \State \quad Update $\theta$ using SGD or Adam optimizer: $\theta \leftarrow \theta + \alpha_{\theta} \nabla_{\theta} L(\theta, \phi)$
+            \State \quad Update $\phi$ using SGD or Adam optimizer: $\phi \leftarrow \phi + \alpha_{\phi} \nabla_{\phi} L(\theta, \phi)$
+        \EndFor
+    \EndFor
+    \State $\theta_{old} \leftarrow \theta$
+\Until{ stopping criteria is met}
 \end{algorithmic}
 \end{algorithm}
 
@@ -244,30 +271,36 @@ Here is a reference version of the algorithm from Open AI's spinning up document
 
 Twin Delayed Deep Deterministic Policy Gradient \cite{fujimotoAddressingFunctionApproximation2018} is a variant of DDPG \cite{lillicrapContinuousControlDeep2016} that builds on Double Q-Learning \cite{hasseltDeepReinforcementLearning2015}. It is a actor critic method that uses experience replay, target networks and policy noise to stabilise learning. The main idea is to use two critics to estimate the value of the action taken and then use the minimum of the two to update the policy. This is to reduce the overestimation bias that can happen in Q-learning methods.
 
-The policy noise is not seen in the other algorithms mentioned above. The clipped policy noise in the critic target is used to make sure that the critics aren't overfitting to peaks. This works on the intuition that simliar actions should have similar values.
+The policy noise is not seen in the other algorithms mentioned above. The clipped policy noise in the critic target is used to make sure that the critics aren't overfitting to peaks. This works on the intuition that similiar actions should have similar values.
 
-The algorithm from the original paper \cite{fujimotoAddressingFunctionApproximation2018} is as follows:
+The algorithm from the original paper \cite{fujimotoAddressingFunctionApproximation2018} with slight modifications for clarity:
 
 \begin{algorithm}[H]
 \caption{Twin Delayed Deep Deterministic Policy Gradient (TD3)}
 \begin{algorithmic}[1]
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\alpha$, $\alpha_{\pi}$ and $\alpha_{Q}$, target smoothing coefficient $\tau$, target policy smoothing noise $\sigma$, target policy noise clip $c$, target policy noise $\tilde{\sigma}$, target policy noise clip $c$, target policy noise $\tilde{\sigma}$, target policy noise clip $c$, update frequency $d$}
 \State Initialize critic networks $Q_{\theta_1}$, $Q_{\theta_2}$, and actor network $\pi_{\phi}$ with random parameters $\theta_1$, $\theta_2$, $\phi$
 \State Initialize target networks $\theta'_1 \leftarrow \theta_1$, $\theta'_2 \leftarrow \theta_2$, $\phi' \leftarrow \phi$
-\State Initialize replay buffer $\mathcal{B}$
-\For{$t = 1$ \textbf{to} $T$}
+\State Initialize replay buffer $\mathcal{D}$
+\Repeat
     \State Select action with exploration noise $a \sim \pi_{\phi}(s) + \epsilon$, $\epsilon \sim \mathcal{N}(0, \sigma)$ and observe reward $r$ and new state $s'$
-    \State Store transition tuple $(s, a, r, s')$ in $\mathcal{B}$
-    \State Sample mini-batch of $N$ transitions $(s, a, r, s')$ from $\mathcal{B}$
-    \State $\tilde{a} \leftarrow \pi_{\phi'}(s') + \epsilon$, $\epsilon \sim \text{clip}(\mathcal{N}(0, \tilde{\sigma}), -c, c)$
-    \State $y \leftarrow r + \gamma \min_{i=1,2} Q_{\theta'_i}(s', \tilde{a})$
-    \State Update critics $\theta_i \leftarrow \arg\min_{\theta_i} N^{-1} \sum(y - Q_{\theta_i}(s, a))^2$
+    \State Store transition tuple $(s, a, r, s')$ in $\mathcal{D}$
+    \State Sample mini-batch of $K$ transitions $(s, a, r, s')$ from $\mathcal{D}$
+    \State Initialize critic loss $L_{\theta_1} \leftarrow 0$, $L_{\theta_2} \leftarrow 0$
+    \For{$i = 1$ to $K$}
+        \State Add noise to target action: $\tilde{a}_i \leftarrow \pi_{\phi'}(s'_i) + \text{clip}(\epsilon_i, -c, c)$ where $\epsilon_i \sim \mathcal{N}(0, \tilde{\sigma})$
+        \State Compute target Q-value: $y_i \leftarrow r_i + \gamma \min(Q_{\theta'_1}(s'_i, \tilde{a}_i), Q_{\theta'_2}(s'_i, \tilde{a}_i))$
+        \State Accumulate critic losses: $L_{\theta_j} \leftarrow L_{\theta_j} + (y_i - Q_{\theta_j}(s_i, a_i))^2$ for $j = 1, 2$
+    \EndFor
+    \State Update critics: $\theta_i \leftarrow \theta_i - \alpha_Q \nabla_{\theta_i}(L_{\theta_i}/K)$ for $i = 1, 2$
+
     \If{$t \bmod d$}
         \State Update $\phi$ by the deterministic policy gradient:
-        \State $\nabla_{\phi}J(\phi) = N^{-1} \sum \nabla_a Q_{\theta_1}(s, a)|_{a=\pi_{\phi}(s)} \nabla_{\phi}\pi_{\phi}(s)$
+        \State $\nabla_{\phi}J(\phi) = K^{-1} \sum_{i}^{K} \nabla_a Q_{\theta_1}(s_i, a)|_{a=\pi_{\phi}(s_i)} \nabla_{\phi}\pi_{\phi}(s_i)$
         \State Update target networks:
         \State $\theta'_i \leftarrow \tau\theta_i + (1 - \tau)\theta'_i$
         \State $\phi' \leftarrow \tau\phi + (1 - \tau)\phi'$
     \EndIf
-\EndFor
+\Until{stopping criteria is met}
 \end{algorithmic}
 \end{algorithm}
