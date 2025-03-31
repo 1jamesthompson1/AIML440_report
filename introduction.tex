@@ -2,7 +2,7 @@
 
 \subsection{The reinforcement learning problem}
 
-Reinforcement learning is a framework of learning that describes how an agent learns by interacting with the environment. The framework involves 2 entities the agent and environment. The agent is the only entity that we as designers have direct control of. We decide how its learns and decides on its actions. The environment is the context and situation that the agent is in. There are three important flows of information;  the state of the environment to the agent, the action decision to the environment and lastly the reward to the agent. This can be best be understood in the figure below.
+Reinforcement learning is a framework that describes how an agent learns by interacting with the environment. The framework involves 2 entities the agent and environment. The agent is the only entity that we as designers have direct control of. We decide how its learns and decides on its actions. The environment is the context and situation that the agent is in. There are three important flows of information;  the state of the environment to the agent, the action decision to the environment and lastly the reward to the agent. This can be best be understood in the figure below.
 
 \begin{fig}
 \begin{center}
@@ -22,7 +22,7 @@ Reinforcement learning is a framework of learning that describes how an agent le
 \end{center}
 \end{fig}
 
-The state is a representation of the information within the environment that the agent will use to make its decision on which action to take. The reward signal is treated as the final word on how good the previous state action was, the more reward the better, always. Lastly the action taken by the agent is sent to the environment and the environment will in turn return the next state and reward. This brings us to the reinforcement learning problem which can be framed as such "How does the agent decide which actions to take given the state such that it maximises the future cumulative reward". It is important that the agent maximises all \textit{future cumulative} reward otherwise short term gains could be made to the sacrifice of larger long term gains. This idea has been formalised by Richard Sutton as the reward hypothesis
+The state is a representation of the information within the environment that the agent observes to make its decision on which action to take. The reward signal is treated as the final word on how good the previous state action was, the more reward the better, always. Lastly the action taken by the agent is sent to the environment and the environment will in turn return the next state and reward. This brings us to the reinforcement learning problem which can be framed as such "How does the agent decide which actions to take given the state such that it maximises the future cumulative reward". It is important that the agent maximises all \textit{future cumulative} reward otherwise short term gains could be made to the sacrifice of larger long term gains. This idea has been formalised by Richard Sutton as the reward hypothesis
 
 \begin{quote}
     "That all of what we mean by goals and purposes can be well thought of as maximization of the expected value of the cumulative sum of a received scalar signal (reward)." 
@@ -40,16 +40,16 @@ The reinforcement problem can be formalised as a Markov Decision Process (MDP). 
 \end{equation}
 Where $s,s \in S, a \in \mathcal{A}(s) \text{ and } r \in R$.
 
-This transition function completely characterises the dynamics of the environment. The abstraction of the environment to a MDP is widely applicable and serves as the basis for much of reinforcement learning. We can see here that transition function only looks at the previous state. It can do this because we assume that the state representation has the \textit{Markov property} \cite{suttonReinforcementLearningSecond2018}. The Markov property states that including previous states in the conditional wont change the probability of next state reward tuple. In other words $\mathcal{P}(s_{t+1}, r_{t+1}, s_{t},a_{t}) = \mathcal{P}(s_{t+1}, r_{t+1}, s_{t},a_{t}, s_{t-1}, s_{t-2}, ... , s_{0})$. Therefore a state with the Markov property is a sufficient representation of the history of the agent-environment interaction. 
+This transition function completely characterises the dynamics of the environment. The abstraction of the environment to a MDP is widely applicable and serves as the basis for much of reinforcement learning. We can see here that transition function only looks at the previous state. It can do this because we assume that the state representation has the \textit{Markov property} \cite{suttonReinforcementLearningSecond2018}. The Markov property states that including previous states in the conditional wont change the probability of next state reward tuple. In other words $\mathcal{P}(s_{t+1}, r_{t+1}, s_{t},a_{t}) = \mathcal{P}(s_{t+1}, r_{t+1}, s_{t},a_{t}, s_{t-1}, s_{t-2}, ... , s_{0})$. Therefore a state with the Markov property is a sufficient representation of the history of the agent-environment interaction. In some problems the agent only partially observes the state meaning the Markov property is not satisfied. This is called a partially observable MDP (POMDP) and is a more complex problem to solve which wont be addressed in this report.
 
-The agent interaction with the MDP to produce a trajectory of states, actions and rewards. Because the agent will not know the transition function \ref{eq:transition} it will have to learn about the MDP from the information in a trajectory \ref{eq:MDPsequence}
+The agent interacts with the MDP to produce a trajectory of states, actions and rewards. Because the agent will not know the transition function \ref{eq:transition} it will have to learn about the MDP from the information in a trajectory \ref{eq:MDPsequence}.
 
 \begin{equation}
 S_{1},A_{1},R_{2},\dots S_{n},A_{n}, R_{n+1},\dots 
 \label{eq:MDPsequence}
 \end{equation}
 
-In this trajectory \ref{eq:MDPsequence} we have an infinite sequence as this is an example from a continuing MDP that has no end. Alternatively you could have episodic MDPs that have a start and end with a terminal state.
+In this trajectory \ref{eq:MDPsequence} we have an infinite sequence as this is an example from a continuing MDP that has no end. Alternatively you could have episodic MDPs that have a start and end with a terminal state. Episodic MDPs require practical considerations in implementing algorithms. However for most of the theory it make no difference as you can think of a episode MDP as a continuing MPD with a state that transitions to itself and gives reward 0.
 
 "The cumulative sum of a received scalar signal" part of the reward hypothesis \ref{quote:reward} can be formalised to be the return $G$.
 

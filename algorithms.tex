@@ -61,15 +61,10 @@ This particular update is known as TD(0) because it only looks one step into the
 
 The two methods of TD(n) and Monte carlo can be to get the best of both worlds using TD($\lambda$) methods \cite{suttonLearningPredictMethods1988}.
 
-There are two issues with the Naive methods of TD and Monte Carlo methods mentioned above. This is scalability and exploration.
-
-Firstly with scalability we are storing the action value of a particular state in a large lookup table. This will immediately become a problem when dealing with large state or action spaces. Most real world application have tremendously large state/action spaces. Furthermore it is easy to imagine how most of the states have overlapping information and are actually really quite similar. Therefore instead of learning $Q$ directly we can try and learn an appropriator $\hat{Q}$.
-
-Second problem is exploration. As we learn we are finding better and better actions. These better action are taken which will form our trajectory. What can happen here is that we miss large chunks of the state space. To solve this we can instead use a sub optimal policy that deliberately takes exploratory actions. $\epsilon$-greedy is a good example of this as it will take a random action with probability $\epsilon$ and an optimal action the rest of the time. Alternatively you can use a different exploration policy to interact with the environment while you are learning the optimal. This method of learning from experience using a different policy is called off-policy learning. The previous methods we looked at are both on-policy.
 
 \subsubsection{Policy Based Methods}
 
-A different way of the approaching the problem is by learning the policy directly without a learning a concept of how good a state is. The most common policy based method is called policy gradient methods \cite{suttonPolicyGradientMethods1999}. To use policy gradient methods you need to parametize the policy $pi$ in any way as long as $pi(a|s, \theta)$ is differentiable with respect to $\theta$.
+A different way of the approaching the problem is by learning the policy directly without a learning a concept of how good a state is. The most common policy based method is called policy gradient methods \cite{suttonPolicyGradientMethods1999}. To use policy gradient methods you need to parametize the policy $\pi$ in any way as long as $\pi(a|s, \theta)$ is differentiable with respect to $\theta$.
 
 The first of these policy gradient methods was the Reinforce algorithm \cite{williamsSimpleStatisticalGradientfollowing1992}. It is a Monte Carlo policy gradient method. The updates are made by moving the policy in the direction of the gradient of the log probability of the action taken. This works because it is proportional to the return which is given to use by the policy gradient theorem \cite{suttonPolicyGradientMethods1999}.
 
@@ -89,7 +84,17 @@ The first of these policy gradient methods was the Reinforce algorithm \cite{wil
 \end{algorithmic}
 \end{algorithm}
 
+\subsubsection{Challenges of tradtional methods}
+
+There are main two issues with the simple methods of TD and Monte Carlo mentioned above. This is scalability and exploration.
+
+Firstly with scalability we are storing the action value of a particular state in a large lookup table. This will immediately become a problem when dealing with large state or action spaces. Most real world application have tremendously large state/action spaces. Furthermore it is easy to imagine how most of the states have overlapping information and are actually really quite similar. Therefore instead of learning $Q$ directly we can try and learn an approximator $\hat{Q}$.
+
+Second problem is exploration. As we learn we are finding better and better actions. These better action are taken which will form our trajectory. What can happen here is that we miss large chunks of the state space. To solve this we can instead use a sub optimal policy that deliberately takes exploratory actions. $\epsilon$-greedy is a good example of this as it will take a random action with probability $\epsilon$ and an optimal action the rest of the time. Alternatively you can use a different exploration policy to interact with the environment while you are learning the optimal. This method of learning from experience using a different policy is called off-policy learning. The previous methods we looked at are all on-policy.
+
 \subsection{Modern Deep learning algorithms}\label{sec:MDLA}
+
+One of the problems with the above tabular methods is that the policy and value functions are stored explicitly in effectively a large table lookup. This means that for every state and or action there needs to be a new entry. This is problematic as the state and action space of the problems get very large. To resolve this problem we can use function approximators and the best ones we have are neural networks \cite{hornikMultilayerFeedforwardNetworks1989}. This allows for the combination of the deep learning ideas within the reinforcement learning framework to give rise to deep reinforcement learning.
 
 \subsubsection{Deep Q Networks}
 \label{subsec:DQN}
@@ -100,7 +105,7 @@ One can take the TD(0) learning algorithm and apply the notion of off-policy lea
 Q(S_{t}, A_{t}) \leftarrow Q(S_{t}, A_{t}) + \alpha \left( R_{t+1}+\gamma \max_{a} Q(S_{t+1}, a) - Q(S_{t}, A_{t}) \right) 
 \end{equation}
 
-As with TD(0) this fails when faced with a sufficiently large state and/or action space. To resolve this we can use a function approximator, which means we no longer need to store a mapping for every single state. The most powerful function approximators we have are neural networks \cite{hornikMultilayerFeedforwardNetworks1989}. Therefore we can apply a neural network as an approximator $\hat{Q}$ for $Q$. The algorithm we get is called Deep-Q-Learning \cite{mnihPlayingAtariDeep2013}\cite{mnihHumanlevelControlDeep2015}. It was applied very successfully to match and exceed human level performance on a large variety of Atari 2600 games (Space invaders, pong etc).
+As with TD(0) this fails when faced with a sufficiently large state and/or action space. Therefore we apply a neural network as an approximator $\hat{Q}$ for $Q$. The algorithm we get is called Deep-Q-Learning \cite{mnihPlayingAtariDeep2013}\cite{mnihHumanlevelControlDeep2015}. It was applied very successfully to match and exceed human level performance on a large variety of Atari 2600 games (Space invaders, pong etc).
 
 Here is the algorithm that Mnih et al used in their papers \cite{mnihPlayingAtariDeep2013} \cite{mnihHumanlevelControlDeep2015}, with some notational differences to make it more explicit.
 
@@ -198,7 +203,7 @@ Between 2018 and 2019, when SAC was first introduced, it outperformed other popu
 
 \subsubsection{Proximal Polixy Optimizatin}\label{subsec:PPO}
 
-One of the problems that can happen with policy changes is that a small change which results in a different actions being taken can have large consequences. A natural idea is to try and limit the changes that can happen to policy at any step. You can do this by using a surrogate objective function that is limited to be at least somewhat similar to the current policy. This was first implemented using a trust region (i.e an area that we can safely move the policy and is guranteed to improve) and resulted in the TRPO algorithm \cite{schulmanTrustRegionPolicy2017}. Yet the most popular method is that of PPO \cite{schulmanProximalPolicyOptimization2017}, as it is computationally simpler. The method used in PPO is to use a clipped objective which results in a loss function like so:
+One of the instabilities in RL algorithms is that a change in the actions taken by a policy can have large consequences, both good and bad. A natural idea is to try and limit the changes that can happen to a policy at any step. You can do this by using a surrogate objective function that is limited to be at least somewhat similar to the current policy. This was first implemented using a trust region (i.e an area that we can safely move the policy and is guaranteed to improve) and resulted in the TRPO algorithm \cite{schulmanTrustRegionPolicy2017}. Yet the most popular method is that of PPO \cite{schulmanProximalPolicyOptimization2017}, as it is computationally simpler. The method used in PPO is to use a clipped objective which results in a loss function like so:
 
 \begin{equation}
 L^{\text{CLIP}}(s,a,\theta_k,\theta) = \min\left(
@@ -217,7 +222,7 @@ The advantage function can be can be estimated in many ways . A simple advantage
 
 Where $\delta_{t}^{V}=r_{t}+\gamma V(s_{t}+1)-V(s_{t})$. $\gamma$ is the usual discounting factor but this is expanded on with $\lambda$ which is from 0-1, at 0 it is TD(0) error and at 1 would be the full complete return.
 
-With this advantage estimator we need to learn a value function. This puts PPO in the same style of actor-critic methods. It is however regarded as a Policy gradient method starting with the author Schulman designating it so.
+With this advantage estimator we need to learn a value function. This puts PPO in the same style of actor-critic methods. It is however regarded as a Policy gradient method starting with the author Schulman designating it so \cite{schulmanProximalPolicyOptimization2017}.
 
 The CLIP loss function can be augmented with other objectives to increase its effectiveness. For example using entropy maximisation to encourage exploring like what is done above with \ref{subsec:SAC}. This leads to this objective:
 
@@ -232,7 +237,7 @@ Below is the algorithm from the paper \cite{schulmanProximalPolicyOptimization20
 \begin{algorithm}[H]
 \caption{PPO Algorithm, Actor Critic style}
 \begin{algorithmic}[1]
-\Require{Clipping amount $\epsilon$, Minibatch size $K$, epoch $M$, discount factor $\gamma$, learning rates $\alpha_{\theta}$ and $\alpha_{\phi}$, number of actors $N$, environemt steps $T$, neural network function approximator $V$, neural network function approximator $\pi$ and value function coefficient $c_{1}$ and entropy coefficient $c_{2}$}
+\Require{Clipping amount $\epsilon$, Minibatch size $K$, epoch $M$, discount factor $\gamma$, learning rates $\alpha_{\theta}$ and $\alpha_{\phi}$, number of actors $N$, environemt steps $T$, neural network function approximator $V$, neural network function approximator $\pi$, value function coefficient $c_{1}$ and entropy coefficient $c_{2}$}
 \State Initialize policy $\pi_{\theta}$ and value function $V_{\phi}$ with random weights $\theta$ and $\phi$
 \State $\theta_{old} \leftarrow \theta$
 \Repeat
@@ -269,20 +274,22 @@ Below is the algorithm from the paper \cite{schulmanProximalPolicyOptimization20
 
 \subsubsection{Twin Delayed Deep Deterministic Policy Gradient}\label{subsec:TD3}
 
-Twin Delayed Deep Deterministic Policy Gradient \cite{fujimotoAddressingFunctionApproximation2018} is a variant of DDPG \cite{lillicrapContinuousControlDeep2016} that builds on Double Q-Learning \cite{hasseltDeepReinforcementLearning2015}. It is a actor critic method that uses experience replay, target networks and policy noise to stabilise learning. The main idea is to use two critics to estimate the value of the action taken and then use the minimum of the two to update the policy. This is to reduce the overestimation bias that can happen in Q-learning methods.
 
-The policy noise is not seen in the other algorithms mentioned above. The clipped policy noise in the critic target is used to make sure that the critics aren't overfitting to peaks. This works on the intuition that similiar actions should have similar values.
+A problem with using value function based methods with approximation is that they can lead to overestimation bias (an agent thinking a situation is better than it really is). This has been shown to be a problem in the contiunous control setting \cite{fujimotoAddressingFunctionApproximation2018}. A way to resolve this overestimation error is to use two critics to estimate the value of the action taken and then use the minimum of the two to update the policy. This is called Twin Delayed Deep Deterministic Policy Gradient \cite{fujimotoAddressingFunctionApproximation2018} and is a variant of DDPG \cite{lillicrapContinuousControlDeep2016} that builds on Double Q-Learning \cite{hasseltDeepReinforcementLearning2015}. It is a actor critic method that also uses experience replay, target networks and policy noise to stabilise learning.
+
+The policy noise method is not seen in the other algorithms mentioned above. The clipped policy noise in the critic target is used to make sure that the critics aren't overfitting to peaks. This works on the intuition that similiar actions should have similar values.
 
 The algorithm from the original paper \cite{fujimotoAddressingFunctionApproximation2018} with slight modifications for clarity:
 
 \begin{algorithm}[H]
 \caption{Twin Delayed Deep Deterministic Policy Gradient (TD3)}
 \begin{algorithmic}[1]
-\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\alpha$, $\alpha_{\pi}$ and $\alpha_{Q}$, target smoothing coefficient $\tau$, target policy smoothing noise $\sigma$, target policy noise clip $c$, target policy noise $\tilde{\sigma}$, target policy noise clip $c$, target policy noise $\tilde{\sigma}$, target policy noise clip $c$, update frequency $d$}
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\alpha_{\pi}$ and $\alpha_{Q}$, target smoothing coefficient $\tau$, policy noise $\sigma$, target policy noise clip $c$, target policy noise $\tilde{\sigma}$, update frequency $d$ and neural network function approximator $Q$ and $\pi$}
 \State Initialize critic networks $Q_{\theta_1}$, $Q_{\theta_2}$, and actor network $\pi_{\phi}$ with random parameters $\theta_1$, $\theta_2$, $\phi$
 \State Initialize target networks $\theta'_1 \leftarrow \theta_1$, $\theta'_2 \leftarrow \theta_2$, $\phi' \leftarrow \phi$
 \State Initialize replay buffer $\mathcal{D}$
 \Repeat
+    \State increment timestep $t$
     \State Select action with exploration noise $a \sim \pi_{\phi}(s) + \epsilon$, $\epsilon \sim \mathcal{N}(0, \sigma)$ and observe reward $r$ and new state $s'$
     \State Store transition tuple $(s, a, r, s')$ in $\mathcal{D}$
     \State Sample mini-batch of $K$ transitions $(s, a, r, s')$ from $\mathcal{D}$
@@ -304,3 +311,4 @@ The algorithm from the original paper \cite{fujimotoAddressingFunctionApproximat
 \Until{stopping criteria is met}
 \end{algorithmic}
 \end{algorithm}
+
