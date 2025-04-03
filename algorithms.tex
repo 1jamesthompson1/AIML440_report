@@ -2,9 +2,9 @@
 
 In the real world we don't get access to the transition function of the MDP. The agents only method to learn is through interacting with the environment. From this interaction we get a sample of the environment and must learn from it. Therefore stochastic learning methods must be used. Two learning ideas are core for many reinforcement learning algorithms. These are Monte Carlo \cite{suttonReinforcementLearningSecond2018} and Temporal Difference learning \cite{suttonTemporalCreditAssignment1984} \cite{suttonLearningPredictMethods1988}.
 
-\subsection{Traditional algorithms}
+\section{Traditional algorithms}
 
-\subsubsection{Value Based Methods}
+\subsection{Value Based Methods}
 
 As mentioned earlier value based method focus on learning a value function and from that function we can derive a policy. The action value function is more powerful as simply knowing the value of a state is not enough to make a decision. The action value function is defined as the expected return given a state and action. Thus all you need to do is take the action that gives you the maximum $Q$ value.
 
@@ -62,7 +62,7 @@ This particular update is known as TD(0) because it only looks one step into the
 The two methods of TD(n) and Monte carlo can be to get the best of both worlds using TD($\lambda$) methods \cite{suttonLearningPredictMethods1988}.
 
 
-\subsubsection{Policy Based Methods}
+\subsection{Policy Based Methods}
 
 A different way of the approaching the problem is by learning the policy directly without a learning a concept of how good a state is. The most common policy based method is called policy gradient methods \cite{suttonPolicyGradientMethods1999}. To use policy gradient methods you need to parametize the policy $\pi$ in any way as long as $\pi(a|s, \theta)$ is differentiable with respect to $\theta$.
 
@@ -84,7 +84,7 @@ The first of these policy gradient methods was the Reinforce algorithm \cite{wil
 \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Challenges of tradtional methods}
+\subsection{Challenges of traditional methods}
 
 There are main two issues with the simple methods of TD and Monte Carlo mentioned above. This is scalability and exploration.
 
@@ -92,11 +92,11 @@ Firstly with scalability we are storing the action value of a particular state i
 
 Second problem is exploration. As we learn we are finding better and better actions. These better action are taken which will form our trajectory. What can happen here is that we miss large chunks of the state space. To solve this we can instead use a sub optimal policy that deliberately takes exploratory actions. $\epsilon$-greedy is a good example of this as it will take a random action with probability $\epsilon$ and an optimal action the rest of the time. Alternatively you can use a different exploration policy to interact with the environment while you are learning the optimal. This method of learning from experience using a different policy is called off-policy learning. The previous methods we looked at are all on-policy.
 
-\subsection{Modern Deep learning algorithms}\label{sec:MDLA}
+\section{Modern Deep learning algorithms}\label{sec:MDLA}
 
 One of the problems with the above tabular methods is that the policy and value functions are stored explicitly in effectively a large table lookup. This means that for every state and or action there needs to be a new entry. This is problematic as the state and action space of the problems get very large. To resolve this problem we can use function approximators and the best ones we have are neural networks \cite{hornikMultilayerFeedforwardNetworks1989}. This allows for the combination of the deep learning ideas within the reinforcement learning framework to give rise to deep reinforcement learning.
 
-\subsubsection{Deep Q Networks}
+\subsection{Deep Q Networks}
 \label{subsec:DQN}
 
 One can take the TD(0) learning algorithm and apply the notion of off-policy learning we get SARSAMAX otherwise known as Q-Learning \cite{watkinsLearningDelayedReward1989} \cite{watkinsQlearning1992} . It works almost the same except the action value function is updated using the best possible action taken at the next state.
@@ -152,7 +152,7 @@ The second assumption is that the training data is identically distributed. Grad
 
 Lastly is the concept of pre-processing the state to speed up the learning process. One can decrease the computational complexity of the neural network by simplifying the state using a transformation that in theory doesn't lose the meaningful information. Minh et al used this in their 2013 paper to make the video input; smaller, conform to the ratio their model needed and making it gray scale. We can see that this pre-processing step is the only example of domain specific knowledge that would be needed for an implementation of the algorithm to a task.
 
-\subsubsection{Soft Actor-Critic}\label{subsec:SAC}
+\subsection{Soft Actor-Critic}\label{subsec:SAC}
 
 The DQN method discussed above, along with TD and MC learning, are all value-based methods. That is, they learn to evaluate how good a current situation is (whether that be a state or state-action), and then a policy can be generated by maximizing over the value function. Another approach is to directly learn the policy function. A combination of these ideas leads to the actor-critic framework.
 
@@ -193,7 +193,6 @@ $\theta_i$
     \EndFor
 \Until{stopping criteria is met}
 
-
 \end{algorithmic}
 \end{algorithm}
 
@@ -201,7 +200,7 @@ One noteworthy difference from conventional actor-critic methods is that SAC use
 
 Between 2018 and 2019, when SAC was first introduced, it outperformed other popular methods such as TD3 \cite{fujimotoAddressingFunctionApproximation2018}, DDPG \cite{lillicrapContinuousControlDeep2019}, and PPO \cite{schulmanProximalPolicyOptimization2017} in continuous control benchmarks.
 
-\subsubsection{Proximal Polixy Optimizatin}\label{subsec:PPO}
+\subsection{Proximal Polixy Optimizatin}\label{subsec:PPO}
 
 One of the instabilities in RL algorithms is that a change in the actions taken by a policy can have large consequences, both good and bad. A natural idea is to try and limit the changes that can happen to a policy at any step. You can do this by using a surrogate objective function that is limited to be at least somewhat similar to the current policy. This was first implemented using a trust region (i.e an area that we can safely move the policy and is guaranteed to improve) and resulted in the TRPO algorithm \cite{schulmanTrustRegionPolicy2017}. Yet the most popular method is that of PPO \cite{schulmanProximalPolicyOptimization2017}, as it is computationally simpler. The method used in PPO is to use a clipped objective which results in a loss function like so:
 
@@ -272,7 +271,7 @@ Below is the algorithm from the paper \cite{schulmanProximalPolicyOptimization20
 \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Twin Delayed Deep Deterministic Policy Gradient}\label{subsec:TD3}
+\subsection{Twin Delayed Deep Deterministic Policy Gradient}\label{subsec:TD3}
 
 
 A problem with using value function based methods with approximation is that they can lead to overestimation bias (an agent thinking a situation is better than it really is). This has been shown to be a problem in the contiunous control setting \cite{fujimotoAddressingFunctionApproximation2018}. A way to resolve this overestimation error is to use two critics to estimate the value of the action taken and then use the minimum of the two to update the policy. This is called Twin Delayed Deep Deterministic Policy Gradient \cite{fujimotoAddressingFunctionApproximation2018} and is a variant of DDPG \cite{lillicrapContinuousControlDeep2016} that builds on Double Q-Learning \cite{hasseltDeepReinforcementLearning2015}. It is a actor critic method that also uses experience replay, target networks and policy noise to stabilise learning.
@@ -312,3 +311,165 @@ The algorithm from the original paper \cite{fujimotoAddressingFunctionApproximat
 \end{algorithmic}
 \end{algorithm}
 
+
+\section{State of the Art Algorithms}
+
+Since the introduction of the modern deep reinforcement learning algorithms, there have been many new algorithms that have been developed. These generally build on the ideas from the first generation of deep reinforcement learning algorithms. I will go into detail about 4 algorithms which are actor critic methods and build on the ideas of SAC \ref{subsec:SAC}. These are:
+
+\begin{description}
+    \item{Truncated Quantile Critics (TQC) \cite{kuznetsovControllingOverestimationBias2020} which uses an ensemble of critics and a truncated distributional critic with the goal of reducing the overestimation bias.}
+    \item{Randomized Ensemble Double Q-Learning (REDQ) \cite{chenRandomizedEnsembledDouble2021} which uses an ensemble of critics which are trained towards a target made up of the minimum of a random subsert of the critics. This allows for a more stable learning process that can handle Updates to Data ratio (UTD) which are greater than 1.}
+    \item{Dropout Q-functions (DROQ) \cite{hiraokaDropoutQFunctionsDoubly2022} which is a variant of REDQ that uses smaller number of critics and instead adds layer dropout and layer normalization to handle a UTD >> 1.}
+    \item{Cross Q-learning (CrossQ) \cite{bhattCrossQBatchNormalization2024} which builds upon SAC by removing the target networks by having the critic network take both the current and next time step as input and applying batch normalization.}
+
+\end{description}
+
+\subsection{Truncated Quantile Critics}\label{subsec:TQC}
+
+One fo the challenges in learning a accurate critic function is the overestimations bias. This comes from the fact that the critic is updated towards the maximum of the Q-values. TQC mitigates this by using multiple distributional critics and truncating the top quantile of the distributions.
+
+The distributional reinforcement learning framework \cite{bellemareDistributionalPerspectiveReinforcement2017} is different from traditional Q-learning because rather than learning the expected value for the state action pair, it learns the return.
+
+$$Z_{\psi_n}(s, a) := \frac{1}{M} \sum_{m=1}^{M} \delta \left(\theta_{\psi_n}^m(s, a) \right)$$
+
+It approximates the distribution with $M$ number of quantiles. each predicting the value of the return at a given quantile $\theta_{\psi}^{m}$. 
+
+Rather than just having a single critic, TQC uses $N$ critics. It takes all of the quantiles from the critics and mixes them together to form a single distribution. From there it truncates the top $k$ values. Kuznetsov et al \cite{kuznetsovControllingOverestimationBias2020} posits that the order of mixing then truncating is important. These quantiles are then used to create a target which the critics are trained towards. In practice target networks are used as well to stabilize the learning process.
+
+Note that the policy is optimized using the untruncated distributions from the critics.
+
+The algorithm from the paper \cite{kuznetsovControllingOverestimationBias2020} with slight modifications is shown below:
+
+\begin{algorithm}[H]
+\caption{Truncated Quantile Critics (TQC)}
+\begin{algorithmic}[1]
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates; $\lambda_{\alpha}, \lambda_{\pi}, \lambda_{Q}$, number of critics $C$, truncation amount $k$, target critic update rate $\beta$, update frequency $d$, Updates to Data ratio UTD, and neural network function approximator $Z$ and $\pi$}
+\State Initialize replay buffer $\mathcal{D}$
+\State Initialize policy $\pi_{\phi}$ and $C$ critics $Z_{\psi_i}$, $Z_{\overline{\psi}_i}$ with random parameters $\psi_i$
+\State Set $\alpha = 1$ and $\mathcal{H}_T = -\dim \mathcal{A}$
+
+\Repeat
+    \State Run policy $\pi_{\phi}$ in environment until termination or truncation
+    \State Append trajectories $(s_t, a_t, r_t, s_{t+1})_{t=0}^{T-1}$ to $\mathcal{D}$
+    \For{UTD times}
+        \State sample a batch  of size $K$ from the replay $\mathcal{D}$
+        \State $\alpha \leftarrow \alpha - \lambda_\alpha \hat \nabla_\alpha J(\alpha)$ 
+        \State $\phi \leftarrow \phi -  \lambda_\pi \hat \nabla_\phi J_\pi(\phi)$  
+        \State  $\psi_n \leftarrow  \psi_n - \lambda_Z \hat \nabla_{\psi_n}  J_Z(\psi_n)$ for  $n\in[1..C]$  
+        \vspace{1pt}
+        \State  $\overline{\psi}_n \leftarrow  \beta \psi_n  + (1 - \beta) \overline{\psi}_n $ for $n\in[1..C]$
+    \EndFor
+\Until{stopping criteria is met}
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsection{Randomized Ensemble Double Q-Learning}\label{subsec:REDQ}
+
+Chen et al \cite{chenRandomizedEnsembledDouble2021} made an algorithm to increase its updates to data ratio (UTD) to be greater than 1. Naively increasing the UTD to be grater than 1 in SAC \ref{subsec:SAC} has poor results, which comes from the instability in the learning. To stabilize the learning REDQ using an ensemble of critics with a target made up of the minimum of a random subset of the critics.
+
+The ensemble of $C$ critics is trained towards a target which is the minimum of a random subset $M$ of the critics. This target is in turn used to update all of the critics. The policy is optimized using the average of the critics. With an $C = 10$ and $M = 2$ the algorithm was able to handle a UTD of 20 \cite{chenRandomizedEnsembledDouble2021}. The authors reference implementation of the algorithm is built of SAC \ref{subsec:SAC} and interesting turns back into SAC if $C=M=2$ and $UTD=1$.
+
+At the time it was the first model-free algorithm to be able to handle a UTD greater than 1. This higher ratio allows for a increase in sample efficiency as it is extracting more information from the replay buffer per time step. This does however increase the computational cost as each time step requires $C \times UTDC$ gradient descent steps and $M$ forward passes.
+
+Pseudo code for the algorithm taken from the paper \cite{chenRandomizedEnsembledDouble2021} with some modifications for clarity is shown below:
+
+
+\begin{algorithm}[H]
+\caption{Randomized Ensembled Double Q-learning (REDQ)}
+\begin{algorithmic}[1]
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $z\lambda_{\pi}, \lambda_{Q}$, number of critics $C$, target critic update rate $\beta$, entropy coefficient $\alpha$ critic subsets $M$, Updates to Data ratio UTD, and neural network function approximator $Q$ and $\pi$}
+\State Initialize policy parameters $\theta$, $C$ Q-function parameters $\phi_{i}$, $i=1,\ldots,N$, empty replay buffer $\mathcal{D}$. Set target parameters $\phi_{\text {targ}, i} \leftarrow \phi_{i}, \text{ for } i =1, 2, \ldots, N$
+
+\Repeat
+    \State Select action: $a_{t} \sim \pi_{\theta}(a_{t} | s_{t})$ and observe reward $r_{t}$ and next state $s_{t+1}$
+    \State Store transition $(s_{t}, a_{t}, r_{t}, s_{t+1})$ in $\mathcal{D}$
+    \For {$UTD$ times}
+        \State Sample a mini-batch $B=\left\{\left(s, a, r, s^{\prime} \right)\right\}$ from $\mathcal{D}$ of size $K$
+        \State Sample a set $\cal{M}$ of $M$ distinct indices from $\{1, 2, \ldots, C\}$
+        \State Compute the Q target $y$ (same for all of the $C$ Q-functions):
+        \[
+        y=r+\gamma\left(\min _{i\in \cal{M}} Q_{\phi_{\text {targ},i}}\left(s^{\prime}, \tilde{a}^{\prime}\right)-\alpha \log \pi_{\theta}\left(\tilde{a}^{\prime} \mid s^{\prime}\right)\right),\quad \tilde{a}^{\prime} \sim \pi_{\theta}\left(\cdot \mid s^{\prime}\right)
+        \]
+        \For{$i=1,\ldots,C$}
+            \State Update $\phi_i$ with gradient descent using
+            \[
+            \nabla_{\phi} \frac{1}{K} \sum_{\left(s, a, r, s^{\prime} \right) \in B}\left(Q_{\phi_{i}}(s, a)-y\right)^{2} 
+            \]
+            \State Update target networks with $\phi_{\operatorname{targ},i} \leftarrow \beta \phi_{\operatorname{targ},i}+(1-\beta) \phi_{i}$
+        \EndFor
+    \EndFor
+    \State Update policy parameters $\theta$ with gradient ascent using
+    \[
+    \nabla_{\theta} \frac{1}{K} \sum_{s \in B}\left(\frac{1}{C}\sum_{i =1}^{C} Q_{\phi_{i}}\left(s, \tilde{a}_{\theta}(s)\right)-\alpha \log \pi_{\theta}\left(\tilde{a}_{\theta}(s) | s\right)\right),
+    \quad \tilde{a}_{\theta}(s) \sim \pi_{\theta}(\cdot \mid s)
+    \]
+\Until{stopping criteria is met}
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsection{Dropout Q-functions}\label{subsec:DROQ}
+
+The big draw back of REDQ \ref{subsec:REDQ} is that it requires a large number of critics to be able to handle a UTD greater than 1. Hiraoka et al \cite{hiraokaDropoutQFunctionsDoubly2022} proposed a method called Dropout Q-functions (DROQ) which uses a smaller number of critics and instead uses dropout and layer normalization to handle the UTD. This allows for a similar sample efficiency at about half the computational cost (DroQ is about 2x faster than REDQ) \cite{hiraokaDropoutQFunctionsDoubly2022}.
+
+Dropout layers \cite{srivastavaDropoutSimpleWay2014} are used within the critic networks to randomly drop out neurons during training. It is used within the deep learning community to help prevent overfitting. The intuition being that be randomly removing neurons the networks has to learn features that are not reliant on single neurons. However in this setting it is being used to model the uncertainty in the Q-value. Layer normalization \cite{baLayerNormalization2016} is used after the dropout layer which increases the effectiveness of the dropout layer.
+
+Because it is using a smaller ensemble of critics it uses all of the critics when creating the target. This is different from REDQ \ref{subsec:REDQ} which uses a random subset of the critics. Other than this the algorithm is almost identical to REDQ as seen below:
+
+\begin{algorithm}[H]
+\caption{Randomized Ensembled Double Q-learning (REDQ)}
+\begin{algorithmic}[1]
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $z\lambda_{\pi}, \lambda_{Q}$, number of critics $C$, target critic update rate $\beta$, entropy coefficient $\alpha$, Updates to Data ratio UTD, and neural network function approximator $Q$ and $\pi$}
+\State Initialize policy parameters $\theta$, $C$ Q-function parameters $\phi_{i}$, $i=1,\ldots,N$, empty replay buffer $\mathcal{D}$. Set target parameters $\phi_{\text {targ}, i} \leftarrow \phi_{i}, \text{ for } i =1, 2, \ldots, N$
+
+\Repeat
+    \State Select action: $a_{t} \sim \pi_{\theta}(a_{t} | s_{t})$ and observe reward $r_{t}$ and next state $s_{t+1}$
+    \State Store transition $(s_{t}, a_{t}, r_{t}, s_{t+1})$ in $\mathcal{D}$
+    \For {$UTD$ times}
+        \State Sample a mini-batch $B=\left\{\left(s, a, r, s^{\prime} \right)\right\}$ from $\mathcal{D}$ of size $K$
+        \State Compute the Q target $y$ (same for all of the $C$ Q-functions):
+        \[
+        y=r+\gamma\left(\min _{i\in C} Q_{Dr, \phi_{\text {targ},i}}\left(s^{\prime}, \tilde{a}^{\prime}\right)-\alpha \log \pi_{\theta}\left(\tilde{a}^{\prime} \mid s^{\prime}\right)\right),\quad \tilde{a}^{\prime} \sim \pi_{\theta}\left(\cdot \mid s^{\prime}\right)
+        \]
+        \For{$i=1,\ldots,C$}
+            \State Update $\phi_i$ with gradient descent using
+            \[
+            \nabla_{\phi} \frac{1}{K} \sum_{\left(s, a, r, s^{\prime} \right) \in B}\left(Q_{Dr, \phi_{i}}(s, a)-y\right)^{2} 
+            \]
+            \State Update target networks with $\phi_{\operatorname{targ},i} \leftarrow \beta \phi_{\operatorname{targ},i}+(1-\beta) \phi_{i}$
+        \EndFor
+    \EndFor
+    \State Update policy parameters $\theta$ with gradient ascent using
+    \[
+    \nabla_{\theta} \frac{1}{K} \sum_{s \in B}\left(\frac{1}{C}\sum_{i =1}^{C} Q_{Dr,\phi_{i}}\left(s, \tilde{a}_{\theta}(s)\right)-\alpha \log \pi_{\theta}\left(\tilde{a}_{\theta}(s) | s\right)\right),
+    \quad \tilde{a}_{\theta}(s) \sim \pi_{\theta}(\cdot \mid s)
+    \]
+\Until{stopping criteria is met}
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsection{Cross Q-learning}\label{subsec:CROSSQ}
+
+
+The goal of both REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} is to increase the sample efficiency and they achieve it by using a UTD > 1 (typically around 20). However they both come at a computational cost which increases with the number of updates to the data ratio. CrossQ \cite{bhattCrossQBatchNormalization2024} is simple improvement on SAC \ref{subsec:SAC} which removes the target networks which allows it to use batch normalization \cite{ioffeBatchRenormalizationReducing2017}. This combination allows it to achieve higher sample efficient than REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} while being about 4 times faster. Furthermore much wider critic networks (~2000) are used to as it further increases the sample efficiency however not as much as the combination of the previous two.
+
+To allow the batch normalization to work without the target networks we combine the calculation current Q-value and the next Q-value. This is done by concatenating the current state and action with the next state and action. This means that the loss function is changed from what we see in SAC \ref{subsec:SAC}:
+
+\begin{equation}
+    J_Q(\theta) = \mathbb{E}_{(s,a,r,s') \sim \mathcal{D}} \left[ \left( Q_{\theta}(s,a) - r - \gamma Q_{\bar{\theta}}(s',\pi_{\phi}(s')) \right)^2 \right]
+\end{equation}
+
+To no longer use the target network and instead the output from a single Q-function:
+
+\begin{equation}
+    J_Q(\theta) = \mathbb{E}_{(s,a,r,s') \sim \mathcal{D}} \left[ \left( q_t - r - \gamma q_{t+1}) \right)^2 \right]
+\end{equation}
+
+Where $Q_\theta( \left[ \begin{matrix} S_t \\ S_{t+1} \end{matrix}\right], \left[ \begin{matrix} A_t \\ A_{t+1} \end{matrix}\right]) = \left[ \begin{matrix} q_t \\ q_{t+1} \end{matrix}\right]$. 
+
+\smallskip
+
+
+These changes are applied to SAC \ref{subsec:SAC} in the paper however the changes could be applied to other off policy TD learning based algorithms. The algorithm is identical to the SAC algorithm \ref{subsec:SAC} and so wont be shown again here. The differences are in the loss function and the batch normalization in the critic networks. Furthermore CrossQ uses a UTD of 1 with a policy delay of 3.

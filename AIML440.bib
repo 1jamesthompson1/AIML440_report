@@ -7,6 +7,23 @@
   school = {Carnegie Mellon University}
 }
 
+@misc{baLayerNormalization2016,
+  title = {Layer {{Normalization}}},
+  author = {Ba, Jimmy Lei and Kiros, Jamie Ryan and Hinton, Geoffrey E.},
+  year = {2016},
+  month = jul,
+  number = {arXiv:1607.06450},
+  eprint = {1607.06450},
+  primaryclass = {stat},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1607.06450},
+  urldate = {2025-04-03},
+  abstract = {Training state-of-the-art, deep neural networks is computationally expensive. One way to reduce the training time is to normalize the activities of the neurons. A recently introduced technique called batch normalization uses the distribution of the summed input to a neuron over a mini-batch of training cases to compute a mean and variance which are then used to normalize the summed input to that neuron on each training case. This significantly reduces the training time in feed-forward neural networks. However, the effect of batch normalization is dependent on the mini-batch size and it is not obvious how to apply it to recurrent neural networks. In this paper, we transpose batch normalization into layer normalization by computing the mean and variance used for normalization from all of the summed inputs to the neurons in a layer on a single training case. Like batch normalization, we also give each neuron its own adaptive bias and gain which are applied after the normalization but before the non-linearity. Unlike batch normalization, layer normalization performs exactly the same computation at training and test times. It is also straightforward to apply to recurrent neural networks by computing the normalization statistics separately at each time step. Layer normalization is very effective at stabilizing the hidden state dynamics in recurrent networks. Empirically, we show that layer normalization can substantially reduce the training time compared with previously published techniques.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/home/james/snap/zotero-snap/common/Zotero/storage/EVGCGAU5/Ba et al. - 2016 - Layer Normalization.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/3JCM7PCC/1607.html}
+}
+
 @article{bellemareArcadeLearningEnvironment2013,
   title = {The {{Arcade Learning Environment}}: {{An Evaluation Platform}} for {{General Agents}}},
   shorttitle = {The {{Arcade Learning Environment}}},
@@ -27,6 +44,23 @@
   file = {/home/james/snap/zotero-snap/common/Zotero/storage/4FRLGSC8/Bellemare et al. - 2013 - The Arcade Learning Environment An Evaluation Platform for General Agents.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/P38JCCAF/1207.html}
 }
 
+@misc{bellemareDistributionalPerspectiveReinforcement2017,
+  title = {A {{Distributional Perspective}} on {{Reinforcement Learning}}},
+  author = {Bellemare, Marc G. and Dabney, Will and Munos, R{\'e}mi},
+  year = {2017},
+  month = jul,
+  number = {arXiv:1707.06887},
+  eprint = {1707.06887},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1707.06887},
+  urldate = {2025-04-02},
+  abstract = {In this paper we argue for the fundamental importance of the value distribution: the distribution of the random return received by a reinforcement learning agent. This is in contrast to the common approach to reinforcement learning which models the expectation of this return, or value. Although there is an established body of literature studying the value distribution, thus far it has always been used for a specific purpose such as implementing risk-aware behaviour. We begin with theoretical results in both the policy evaluation and control settings, exposing a significant distributional instability in the latter. We then use the distributional perspective to design a new algorithm which applies Bellman's equation to the learning of approximate value distributions. We evaluate our algorithm using the suite of games from the Arcade Learning Environment. We obtain both state-of-the-art results and anecdotal evidence demonstrating the importance of the value distribution in approximate reinforcement learning. Finally, we combine theoretical and empirical evidence to highlight the ways in which the value distribution impacts learning in the approximate setting.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/home/james/snap/zotero-snap/common/Zotero/storage/9DQ5YYSK/Bellemare et al. - 2017 - A Distributional Perspective on Reinforcement Learning.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/JANGQACT/1707.html}
+}
+
 @book{bellmanDynamicProgramming1957,
   title = {Dynamic {{Programming}}},
   author = {Bellman, Richard},
@@ -35,6 +69,24 @@
   googlebooks = {rZW4ugAACAAJ},
   langid = {english},
   file = {/home/james/snap/zotero-snap/common/Zotero/storage/JJDZ3HFN/Bellman - 1957 - Dynamic Programming.pdf}
+}
+
+@misc{bhattCrossQBatchNormalization2024,
+  title = {{{CrossQ}}: {{Batch Normalization}} in {{Deep Reinforcement Learning}} for {{Greater Sample Efficiency}} and {{Simplicity}}},
+  shorttitle = {{{CrossQ}}},
+  author = {Bhatt, Aditya and Palenicek, Daniel and Belousov, Boris and Argus, Max and Amiranashvili, Artemij and Brox, Thomas and Peters, Jan},
+  year = {2024},
+  month = mar,
+  number = {arXiv:1902.05605},
+  eprint = {1902.05605},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1902.05605},
+  urldate = {2025-04-02},
+  abstract = {Sample efficiency is a crucial problem in deep reinforcement learning. Recent algorithms, such as REDQ and DroQ, found a way to improve the sample efficiency by increasing the update-to-data (UTD) ratio to 20 gradient update steps on the critic per environment sample. However, this comes at the expense of a greatly increased computational cost. To reduce this computational burden, we introduce CrossQ: A lightweight algorithm for continuous control tasks that makes careful use of Batch Normalization and removes target networks to surpass the current state-of-the-art in sample efficiency while maintaining a low UTD ratio of 1. Notably, CrossQ does not rely on advanced bias-reduction schemes used in current methods. CrossQ's contributions are threefold: (1) it matches or surpasses current state-of-the-art methods in terms of sample efficiency, (2) it substantially reduces the computational cost compared to REDQ and DroQ, (3) it is easy to implement, requiring just a few lines of code on top of SAC.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/home/james/snap/zotero-snap/common/Zotero/storage/LB3AWAZG/Bhatt et al. - 2024 - CrossQ Batch Normalization in Deep Reinforcement Learning for Greater Sample Efficiency and Simplic.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/9W74UP8Q/1902.html}
 }
 
 @misc{bowlingSettlingRewardHypothesis2023,
@@ -177,6 +229,23 @@
   file = {/home/james/snap/zotero-snap/common/Zotero/storage/YES3LB3H/Hasselt et al. - 2015 - Deep Reinforcement Learning with Double Q-learning.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/QHVV4LZX/1509.html}
 }
 
+@misc{hiraokaDropoutQFunctionsDoubly2022,
+  title = {Dropout {{Q-Functions}} for {{Doubly Efficient Reinforcement Learning}}},
+  author = {Hiraoka, Takuya and Imagawa, Takahisa and Hashimoto, Taisei and Onishi, Takashi and Tsuruoka, Yoshimasa},
+  year = {2022},
+  month = mar,
+  number = {arXiv:2110.02034},
+  eprint = {2110.02034},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2110.02034},
+  urldate = {2025-04-02},
+  abstract = {Randomized ensembled double Q-learning (REDQ) (Chen et al., 2021b) has recently achieved state-of-the-art sample efficiency on continuous-action reinforcement learning benchmarks. This superior sample efficiency is made possible by using a large Q-function ensemble. However, REDQ is much less computationally efficient than non-ensemble counterparts such as Soft Actor-Critic (SAC) (Haarnoja et al., 2018a). To make REDQ more computationally efficient, we propose a method of improving computational efficiency called DroQ, which is a variant of REDQ that uses a small ensemble of dropout Q-functions. Our dropout Q-functions are simple Q-functions equipped with dropout connection and layer normalization. Despite its simplicity of implementation, our experimental results indicate that DroQ is doubly (sample and computationally) efficient. It achieved comparable sample efficiency with REDQ, much better computational efficiency than REDQ, and comparable computational efficiency with that of SAC.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Machine Learning},
+  file = {/home/james/snap/zotero-snap/common/Zotero/storage/W3F4VCBW/Hiraoka et al. - 2022 - Dropout Q-Functions for Doubly Efficient Reinforcement Learning.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/83YCGEL2/2110.html}
+}
+
 @article{hornikMultilayerFeedforwardNetworks1989,
   title = {Multilayer Feedforward Networks Are Universal Approximators},
   author = {Hornik, Kurt and Stinchcombe, Maxwell and White, Halbert},
@@ -192,6 +261,36 @@
   abstract = {This paper rigorously establishes that standard multilayer feedforward networks with as few as one hidden layer using arbitrary squashing functions are capable of approximating any Borel measurable function from one finite dimensional space to another to any desired degree of accuracy, provided sufficiently many hidden units are available. In this sense, multilayer feedforward networks are a class of universal approximators.},
   keywords = {Back-propagation networks,Feedforward networks,Mapping networks,Network representation capability,Sigma-Pi networks,Squashing functions,Stone-Weierstrass Theorem,Universal approximation},
   file = {/home/james/snap/zotero-snap/common/Zotero/storage/DLM2NLFJ/Hornik et al. - 1989 - Multilayer feedforward networks are universal approximators.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/5SUJRYSL/0893608089900208.html}
+}
+
+@inproceedings{ioffeBatchRenormalizationReducing2017,
+  title = {Batch {{Renormalization}}: {{Towards Reducing Minibatch Dependence}} in {{Batch-Normalized Models}}},
+  shorttitle = {Batch {{Renormalization}}},
+  booktitle = {Advances in {{Neural Information Processing Systems}}},
+  author = {Ioffe, Sergey},
+  year = {2017},
+  volume = {30},
+  publisher = {Curran Associates, Inc.},
+  urldate = {2025-04-03},
+  abstract = {Batch Normalization is quite effective at accelerating and improving the training of deep models. However, its effectiveness diminishes when the training minibatches are small, or do not consist of independent samples. We hypothesize that this is due to the dependence of model layer inputs on all the examples in the minibatch, and different activations being produced between training and inference. We propose Batch Renormalization, a simple and effective extension to ensure that the training and inference models generate the same outputs that depend on individual examples rather than the entire minibatch. Models trained with Batch Renormalization perform substantially better than batchnorm when training with small  or non-i.i.d. minibatches. At the same time, Batch Renormalization retains the benefits of batchnorm such as insensitivity to initialization and training efficiency.},
+  file = {/home/james/snap/zotero-snap/common/Zotero/storage/V3I7YJWU/Ioffe - 2017 - Batch Renormalization Towards Reducing Minibatch Dependence in Batch-Normalized Models.pdf}
+}
+
+@misc{kuznetsovControllingOverestimationBias2020,
+  title = {Controlling {{Overestimation Bias}} with {{Truncated Mixture}} of {{Continuous Distributional Quantile Critics}}},
+  author = {Kuznetsov, Arsenii and Shvechikov, Pavel and Grishin, Alexander and Vetrov, Dmitry},
+  year = {2020},
+  month = may,
+  number = {arXiv:2005.04269},
+  eprint = {2005.04269},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2005.04269},
+  urldate = {2025-03-31},
+  abstract = {The overestimation bias is one of the major impediments to accurate off-policy learning. This paper investigates a novel way to alleviate the overestimation bias in a continuous control setting. Our method---Truncated Quantile Critics, TQC,---blends three ideas: distributional representation of a critic, truncation of critics prediction, and ensembling of multiple critics. Distributional representation and truncation allow for arbitrary granular overestimation control, while ensembling provides additional score improvements. TQC outperforms the current state of the art on all environments from the continuous control benchmark suite, demonstrating 25\% improvement on the most challenging Humanoid environment.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/home/james/snap/zotero-snap/common/Zotero/storage/NI4E2BCJ/Kuznetsov et al. - 2020 - Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/Z2PIEF6H/2005.html}
 }
 
 @misc{lillicrapContinuousControlDeep2016,
@@ -436,6 +535,21 @@
   archiveprefix = {arXiv},
   keywords = {Computer Science - Artificial Intelligence,Computer Science - Robotics},
   file = {/home/james/snap/zotero-snap/common/Zotero/storage/VTXUZAFW/Smith et al. - 2022 - A Walk in the Park Learning to Walk in 20 Minutes With Model-Free Reinforcement Learning.pdf;/home/james/snap/zotero-snap/common/Zotero/storage/HDJDRAVR/2208.html}
+}
+
+@article{srivastavaDropoutSimpleWay2014,
+  title = {Dropout: {{A Simple Way}} to {{Prevent Neural Networks}} from {{Overfitting}}},
+  shorttitle = {Dropout},
+  author = {Srivastava, Nitish and Hinton, Geoffrey and Krizhevsky, Alex and Sutskever, Ilya and Salakhutdinov, Ruslan},
+  year = {2014},
+  journal = {Journal of Machine Learning Research},
+  volume = {15},
+  number = {56},
+  pages = {1929--1958},
+  issn = {1533-7928},
+  urldate = {2025-04-03},
+  abstract = {Deep neural nets with a large number of parameters are very powerful machine learning systems. However, overfitting is a serious problem in such networks. Large networks are also slow to use, making it difficult to deal with overfitting by combining the predictions of many different large neural nets at test time. Dropout is a technique for addressing this problem. The key idea is to randomly drop units (along with their connections) from the neural network during training. This prevents units from co-adapting too much. During training, dropout samples from an exponential number of different thinned networks. At test time, it is easy to approximate the effect of averaging the predictions of all these thinned networks by simply using a single unthinned network that has smaller weights. This significantly reduces overfitting and gives major improvements over other regularization methods. We show that dropout improves the performance of neural networks on supervised learning tasks in vision, speech recognition, document classification and computational biology, obtaining state-of-the-art results on many benchmark data sets.},
+  file = {/home/james/snap/zotero-snap/common/Zotero/storage/9IYK8CMG/Srivastava et al. - 2014 - Dropout A Simple Way to Prevent Neural Networks from Overfitting.pdf}
 }
 
 @article{suttonLearningPredictMethods1988,
