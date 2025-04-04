@@ -1,0 +1,87 @@
+\chapter{}\label{C:appendixA}
+
+\section{Experiment details}
+
+All of the experiements were run using the same gymnasium version 1.1.1 using all of the version 5 environments. The environments were run using the default Mujoco settings. The source code for the different algorithms can be seen in the table below:
+
+\begin{table}[H]
+\centering
+\caption{Source code for the different algorithms.}
+\label{tab:sourcecode}
+\begin{tabular}{l|c}
+\toprule
+\textbf{Algorithm}                & \textbf{Source Code}             \\
+\midrule\midrule
+SAC, PPO, DQN and TD3 & Stable baselines3 \cite{stable-baselines3} \\
+
+TQC & My own updated copy of the authors implementation \cite{thompson1jamesthompson1Tqc_pytorch2025} \cite{SamsungLabsTqc_pytorchImplementation} \\
+REDQ & My own copy of the authors implementation \cite{thompson1jamesthompson1REDQ2025} \cite{watchernyuWatchernyuREDQ2025} \\
+DroQ and CrossQ & Using SBX which is part of Stable Baselines 3 \cite{stable-baselines3} \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Experiment hyper-parameters}
+
+The hyper-parameters fro the different algorithms were all taken from the respective authors original implementation. No additional hyperparameter tuning was done.
+
+The first table shows the hyperparameters for the older deep learning algorithms \ref{tab:old_hyperparameters} and the second table shows the hyperparameters for the state of the art deep learning algorithms \ref{tab:sota_hyperparameters}.
+
+
+\begin{table}[H]
+\centering
+\caption{Learning Hyperparameters for modern deep learning algorithms.}
+\label{tab:old_hyperparameters}
+\begin{tabular}{l|c|c|c}
+\toprule
+\textbf{Parameter}                &  SAC  & TD3  & PPO \\
+\midrule\midrule
+Discount Factor ($\gamma$)        & \multicolumn{3}{c}{$0.99$}             \\ \midrule
+Learning Rate (Actor \& Critic)   & $0.0003$ & $0.001$ & $0.0003$\\ \midrule
+Replay Buffer Size                & \multicolumn{3}{c}{$10^6$}             \\\midrule
+Batch Size                        & $256$ & $100$ & $64$      \\\midrule
+Activation Function               & \multicolumn{2}{c|}{\texttt{relu}}  & \texttt{Tanh}   \\\midrule
+Critic Width                      & $256$ & $400$ and $300$ & $64$      \\\midrule
+Critic Depth                      & \multicolumn{3}{c}{$2$}      \\\midrule
+Actor Width                       & $256$ & $400$ and $300$ & $64$   \\\midrule
+Actor Depth                       & \multicolumn{3}{c}{$2$}    \\\midrule
+Optimizer                         & \multicolumn{3}{c}{\texttt{Adam}}     \\\midrule
+Target Update Rate ($\tau$)       & \multicolumn{2}{c|}{$0.005$} & \texttt{N/A}       \\\midrule
+Learning start delay              & 100 & $1000$ & \texttt{N/A}  \\\midrule
+Update-To-Data ratio (UTD)        & \multicolumn{3}{c}{$1$}      \\ \midrule
+Policy Delay                      & $1$  & $2$ & $1$      \\\midrule
+Number of  Critics                & \multicolumn{2}{c|}{$2$}  & $1$  \\\midrule
+Algorithm Specific Parameters     & texttt{N/A} & $\begin{matrix}\text{target policy clip}=0.5\\\text{target policy noise}=0.2\end{matrix}$ & $\begin{matrix}\text{n epochs}=10\\\text{gae-}\lambda=0.95\\\text{evironment steps}=2048\\\text{clip range}=0.2\end{matrix}$ \\\midrule
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Learning Hyperparameters for sota deep learning algorithms.}
+\label{tab:sota_hyperparameters}
+\begin{tabular}{l|c|c|c|c}
+\toprule
+\textbf{Parameter}            &  TQC & REDQ  & DroQ & CrossQ\\
+\midrule\midrule
+Discount Factor ($\gamma$)        & \multicolumn{4}{c}{$0.99$}             \\ \midrule
+Learning Rate   & $0.001$ & $0.0003$ & $0.03$            \\ \midrule
+Replay Buffer Size                & \multicolumn{4}{c}{$10^6$}           \\\midrule
+Batch Size                        & \multicolumn{4}{c}{$256$}               \\\midrule
+Activation Function               & \multicolumn{4}{c}{\texttt{relu}}     \\\midrule
+Critic Width                      & $512$ & $256$ & $256$ & $2048$      \\\midrule
+Critic Depth                      & $3$ & \multicolumn{3}{c}{$2$}      \\\midrule
+Actor Width                       & $256$ & $256$ & $256$ & $256$   \\\midrule
+Actor Depth                       & \multicolumn{4}{c}{$2$}    \\\midrule
+Target Update Rate ($\tau$)       & \multicolumn{3}{c|}{$0.005$}         & \texttt{N/A}  \\\midrule
+Adam $\beta_1$                    & \multicolumn{3}{c|}{$0.9$}           &  $0.5$  \\\midrule
+Learning start delay              & 256 & \multicolumn{2}{|c|}{$5000$} & \texttt{N/A}  \\\midrule
+Update-To-Data ratio        & $1$  & \multicolumn{2}{c|}{$20$} & $1$     \\ \midrule
+Policy Delay                      & $1$  & $20$ & $1$ & $3$     \\\midrule
+Number of  Critics                & $5$  & $10$ & \multicolumn{2}{|c}{$2$} \\\midrule
+Algorithm Specific     & $\begin{matrix}\text{n quantiles}=25\\\text{dropped quantiles}=2\end{matrix}$& $\begin{matrix}\text{sampled critics}=2\\\text{initial entropy}=0.2\end{matrix}$ & $\begin{matrix}\text{dropout}=0.01\\\text{Layer normisation}\end{matrix}$ & $\begin{matrix}\text{BatchNorm}=BRN\\\text{Momentum}=0.99\\\text{BRN Warmup}=10^5\end{matrix}$ \\\midrule
+\bottomrule
+\end{tabular}
+\end{table}

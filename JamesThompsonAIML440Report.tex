@@ -20,7 +20,7 @@
 \usepackage{algpseudocode}
 \usepackage{hyperref}
 \usepackage{float}
-
+\usepackage{booktabs} 
 \usepackage{tabularx} % Add this to the preamble
 
 %
@@ -101,11 +101,14 @@ This version contains just the first part which is an introduction and modern al
 
 % individual chapters included here
 
-\include{introduction}
+\include{sections/introduction}
 
-\include{algorithms}
+\include{sections/algorithms}
 
-\include{conclusion}
+\include{sections/experiments}
+
+\include{sections/conclusion}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -119,5 +122,8 @@ This version contains just the first part which is an introduction and modern al
 \bibliographystyle{acm}
 \bibliography{AIML440}
 
+\appendix
+
+\include{sections/appendix}
 
 \end{document}
