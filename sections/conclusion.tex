@@ -22,7 +22,30 @@ There are many ways of splitting the field of reinforcement learning. The binary
     \end{tabularx}
     \caption{Differences between modern deep reinforcement learning algorithms.}
 \end{table}
+These models at their time of release were all considered state of the art for model free algorithms but due to the fast moving field are now transitioning to more foundational model which the latest algorithms are building on. These new algorithms increase not just the sample efficiency but also the asymptotic performance of the algorithms. In making these gains the newer algorithms might sacrifice some computational efficiency or stability.
 
-These models at their time of release were all considered state of the are but due to the fast moving field are now transitioning to more foundational model which the latest algorithms are building on. There is unknown potential in the applicability of current algorithms as well as unknown power in new algorithms. Some of the current limitations of the algorithms are the sample efficiency and the stability of the algorithms. Furthermore there is the larger problem of generalisation, which is getting an agent to act intelligently on varied environments that it has never seen before with minimal to no new training.
+The state of the art deep learning algorithms also having some differences. All of the algorithms that we have looked at however are all Actor Critic based method so all are Off policy, stochastic and use entropy maximization as the exploration strategy. There are still important differences between the algorithms as seen below.
+
+\begin{table}[H]
+    \footnotesize
+    \centering
+    \renewcommand{\arraystretch}{1.4} % Increases row spacing for readability
+    \begin{tabularx}{\textwidth}{X X X X X}
+        \hline
+        \textbf{Feature} & \textbf{TQC} & \textbf{REDQ} & \textbf{DroQ} & \textbf{CrossQ} \\
+        \hline
+        \textbf{Target networks} & \multicolumn{3}{c}{Yes} & No \\
+        \textbf{Number of critics} & 5 & 10 & 2 & 2 \\
+        \textbf{UTD $\gg$ 1} & No & \multicolumn{2}{c}{Yes} & No \\
+        \textbf{Policy delay} & No & \multicolumn{3}{c}{Yes} \\
+        \textbf{Special features} & Truncated distributional critics  & Subset of critic ensemble for critic target, Minimization for Q-target & Dropout layers, minimization for Q-target & Layer normalisation \\
+        \hline
+    \end{tabularx}
+    \caption{Differences between state of the art reinforcement learning algorithms.}
+\end{table}
+
+These algorithms represent some of the best performing algorithms in the field that excel in either their sample efficiency, computational efficiency or stability.
+
+There is unknown potential in the applicability of current algorithms as well as unknown power in new algorithms. Some of the current limitations of the algorithms are the sample efficiency and the stability of the algorithms. Furthermore there is the larger problem of generalization, which is getting an agent to act intelligently on varied environments that it has never seen before with minimal to no new training.
 
 The field of reinforcement learning is still in its infancy and there is much to be discovered. The combination of deep learning and reinforcement learning has opened up many possibilities and the future is bright and exciting.

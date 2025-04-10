@@ -2,11 +2,21 @@
 
 \section{Introduction}
 
-All the algorithms above excluding DQN can work on continuous action spaces. This makes them suited for continuous control tasks that are common within the robotic control domain. I will conduct experiments using the Gymnasium \cite{towers2024gymnasium} library which provides a framework to use among other things some Mujoco \cite{todorov2012mujoco} environments. Specifically I will use \texttt{Humanoid-v5, HumanoidStandup-v5, Walker2d-v5, Ant-v5, HalfCheetah-v5} and \texttt{Hopper-v5} which cover a range of locomotion tasks. \dots
+All the algorithms above excluding DQN can work on continuous action spaces. This makes them suited for continuous control tasks that are common within the robotic control domain. I will conduct experiments using the Gymnasium \cite{towers2024gymnasium} library which provides a framework to use among other things some Mujoco \cite{todorov2012mujoco} environments. Specifically I will use \texttt{Ant-v5, Humanoid-v5, Pusher-v5, HalfCheetah-v5, HumanoidStandup-v5, Swimmer-v5, Hopper-v5, InvertedDoublePendulum-v5, Walker2d-v5} and \texttt{Hopper-v5} which cover a range of locomotion tasks. I will run the experiments we have looked at above on theses environments to understand how well they learn.
+
+There are many different dimensions in which we can judge the learning performance of an algorithm. The most common and useful ones are general across not continuous control problem but all reinforcement learning problems. These common and overarching dimensions are:
+
+\begin{itemize}
+    \item Sample efficiency: How many environment interactions does it take to learn a task?
+    \item Computational efficiency: How much computation does it take to learn a task?
+    \item Stability: How stable is the learning process?
+    \item Asymptotic performance: What is the maximum performance of the algorithm?
+    \item Generalization: How well does the algorithm generalise to new tasks, be it new environments or agent?
+\end{itemize}
 
 \section{Baseline Experiments}
 
-I will look at two things for ll of my baseline algorithms. The first is the sample efficiency and the second is the computational efficiency.
+I will look at two things for all of my baseline algorithms. The first is the sample efficiency and the second is the computational efficiency. It is important to understand both of these metrics as it can sometimes be easier to trade computational efficiency for sample efficiency. Therefore to make a true improvment to a model it must be better at either/both of these metrics will not reducing the other metric.
 
 \subsection{Sample Efficiency}
 To measure the sample efficient I will look at the average reward over 10 episodes every 1000 steps. This will give a learning curve to demonstrate how effective its actions are given how many interactions it has had with the environments.
@@ -14,13 +24,13 @@ To measure the sample efficient I will look at the average reward over 10 episod
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{figures/baseline_results.png}
-    \caption{Sample Efficiency of PPO, SAC, TD3, TQC, REDQ, CrossQ and DroQ.}
+    \caption{Sample Efficiency. The line is a smoothed average return across the 100 episodes made by each seed every 1000 times steps. The shaded area is a smoothed 70\% confidence interval highlighted }
     \label{fig:sample_efficiency}
 \end{figure}
 
-Information on the implementations of the algorithms and the hyperparameters can be found in appendix \ref{C:appendixA}.
+Information on the implementations of the algorithms and the hyperparameters can be found in appendix \ref{C:appendixA}. We see across the algorithms that the newer algorithms outperform the older algorithms in both sample efficiency (how steep the line is) and asymptotic performance (the maximum value of the line). It can be be seen that REDQ and TQC both outperform SAC even though they have hte same foundations.
 
-\textit{Simple analysis of the results here}
+\textit{Simple analysis of the results here. Point out that CrossQ, DroQ and RedQ are noticably betters }
 
 \dots
 
@@ -28,8 +38,17 @@ Information on the implementations of the algorithms and the hyperparameters can
 
 The measure of computational efficiency is about measuring the amount of computation it takes to get a an agent to learn a certain task. As there is a variety of different algorithms the mos general method is to measure the wall clock time it takes the algorithm to complete a certain number of environment steps.
 
-\textit{figure here}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/wall_clock_results.png}
+    \caption{Wall clock time to get to 1 million environment time steps. Vertical lines is how long a million time-steps is in the environment. Horizontal line is the mean average reward at the end of the million steps of learning to help comparisons.}
+    \label{fig:sample_efficiency}
+\end{figure}
 
-All of experiments were run on \dots
+All of experiments were run on similar CPU only machines. See the appendix \ref{C:appendixA} for more information. The goal of graph is not to look at absolute time (however that is interesting to know) it is about the comparing the difference between algorithms given the same hardware.
+
+It is quite clear here that the ensemble methods have much higher computational cost taking about 4 times longer to complete than TQC.
+
+Looking at the horizontal lines can give us a rough idea of whether we are learning in realtime, faster than realtime or slower than realtime. We can see that for a more complicated task like HumanoidStandup we are learning significantly slower than realtime. Whereas for simpler environments like Ant the agent is learning about 3 times faster than realtime.
 
 \dots

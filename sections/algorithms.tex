@@ -318,15 +318,15 @@ Since the introduction of the modern deep reinforcement learning algorithms, the
 
 \begin{description}
     \item{Truncated Quantile Critics (TQC) \cite{kuznetsovControllingOverestimationBias2020} which uses an ensemble of critics and a truncated distributional critic with the goal of reducing the overestimation bias.}
-    \item{Randomized Ensemble Double Q-Learning (REDQ) \cite{chenRandomizedEnsembledDouble2021} which uses an ensemble of critics which are trained towards a target made up of the minimum of a random subsert of the critics. This allows for a more stable learning process that can handle Updates to Data ratio (UTD) which are greater than 1.}
-    \item{Dropout Q-functions (DROQ) \cite{hiraokaDropoutQFunctionsDoubly2022} which is a variant of REDQ that uses smaller number of critics and instead adds layer dropout and layer normalization to handle a UTD >> 1.}
-    \item{Cross Q-learning (CrossQ) \cite{bhattCrossQBatchNormalization2024} which builds upon SAC by removing the target networks by having the critic network take both the current and next time step as input and applying batch normalization.}
+    \item{Randomized Ensemble Double Q-Learning (REDQ) \cite{chenRandomizedEnsembledDouble2021} which uses an ensemble of critics which are trained towards a target made up of the minimum of a random subset of the critics. This allows for a more stable learning process that can handle Updates to Data ratio (UTD) which are greater than 1.}
+    \item{Dropout Q-functions (DROQ) \cite{hiraokaDropoutQFunctionsDoubly2022} which is a variant of REDQ that uses smaller number of critics and instead adds layer dropout and layer normalization to handle a UTD greater than 1.}
+    \item{Cross Q-learning (CrossQ) \cite{bhattCrossQBatchNormalization2024} which builds upon SAC to increase sample efficiency yet keep computation similar to SAC. It does this by removing the target networks, making the critic function take both current and the next state action pair to predict both the current and next step action value in one forward pass. applying batch normalization.}
 
 \end{description}
 
 \subsection{Truncated Quantile Critics}\label{subsec:TQC}
 
-One fo the challenges in learning a accurate critic function is the overestimations bias. This comes from the fact that the critic is updated towards the maximum of the Q-values. TQC mitigates this by using multiple distributional critics and truncating the top quantile of the distributions.
+One fo the challenges in learning an accurate critic function is the overestimations bias. This comes from the fact that the critic is updated towards the maximum of the Q-values. TQC \cite{kuznetsovControllingOverestimationBias2020} mitigates this by using multiple distributional critics and truncating the top quantile of the distributions.
 
 The distributional reinforcement learning framework \cite{bellemareDistributionalPerspectiveReinforcement2017} is different from traditional Q-learning because rather than learning the expected value for the state action pair, it learns the return.
 
@@ -334,16 +334,16 @@ $$Z_{\psi_n}(s, a) := \frac{1}{M} \sum_{m=1}^{M} \delta \left(\theta_{\psi_n}^m(
 
 It approximates the distribution with $M$ number of quantiles. each predicting the value of the return at a given quantile $\theta_{\psi}^{m}$. 
 
-Rather than just having a single critic, TQC uses $N$ critics. It takes all of the quantiles from the critics and mixes them together to form a single distribution. From there it truncates the top $k$ values. Kuznetsov et al \cite{kuznetsovControllingOverestimationBias2020} posits that the order of mixing then truncating is important. These quantiles are then used to create a target which the critics are trained towards. In practice target networks are used as well to stabilize the learning process.
+Rather than just having a single critic, TQC uses $N$ critics. It takes all of the quantiles from the critics and mixes them together to form a single distribution. From there it truncates the top $k$ values. Kuznetsov et al \cite{kuznetsovControllingOverestimationBias2020} posits that the order of mixing then truncating rather than truncating and mixing is important. These quantiles are then used to create a target which the critics are trained towards. In practice target critic networks are also used as well to stabilize the learning process.
 
-Note that the policy is optimized using the untruncated distributions from the critics.
+Note that the policy is optimized using the untruncated distributions from the critics because there is not the same feedback that causes an overestimation bias.
 
 The algorithm from the paper \cite{kuznetsovControllingOverestimationBias2020} with slight modifications is shown below:
 
 \begin{algorithm}[H]
 \caption{Truncated Quantile Critics (TQC)}
 \begin{algorithmic}[1]
-\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates; $\lambda_{\alpha}, \lambda_{\pi}, \lambda_{Q}$, number of critics $C$, truncation amount $k$, target critic update rate $\beta$, update frequency $d$, Updates to Data ratio UTD, and neural network function approximator $Z$ and $\pi$}
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates; $\lambda_{\alpha}, \lambda_{\pi}, \lambda_{Q}$, number of critics $C$, truncation amount $k$, number of quantiles $M$, target critic update rate $\beta$, update frequency $d$, Updates to Data ratio UTD, and neural network function approximator $Z$ and $\pi$}
 \State Initialize replay buffer $\mathcal{D}$
 \State Initialize policy $\pi_{\phi}$ and $C$ critics $Z_{\psi_i}$, $Z_{\overline{\psi}_i}$ with random parameters $\psi_i$
 \State Set $\alpha = 1$ and $\mathcal{H}_T = -\dim \mathcal{A}$
@@ -352,10 +352,19 @@ The algorithm from the paper \cite{kuznetsovControllingOverestimationBias2020} w
     \State Run policy $\pi_{\phi}$ in environment until termination or truncation
     \State Append trajectories $(s_t, a_t, r_t, s_{t+1})_{t=0}^{T-1}$ to $\mathcal{D}$
     \For{UTD times}
-        \State sample a batch  of size $K$ from the replay $\mathcal{D}$
-        \State $\alpha \leftarrow \alpha - \lambda_\alpha \hat \nabla_\alpha J(\alpha)$ 
-        \State $\phi \leftarrow \phi -  \lambda_\pi \hat \nabla_\phi J_\pi(\phi)$  
-        \State  $\psi_n \leftarrow  \psi_n - \lambda_Z \hat \nabla_{\psi_n}  J_Z(\psi_n)$ for  $n\in[1..C]$  
+        \State sample a batch $B$ of size $K$ from the replay $\mathcal{D}$
+        \State Update $\alpha$ with gradient descent using
+        \[
+        \nabla_{\alpha} \frac{1}{K} \sum_{(s,a)\in B} \log \alpha (-\log \pi_{\phi}(a|s)- \mathcal{H}_T) 
+        \]
+        \State $\phi$ with gradient descent using
+        \[
+        \nabla_{\phi} \frac{1}{K} \sum_{(s,a) \in B}\left(\alpha \log \pi_\phi(a|s) - \frac{1}{NM} \sum_{n=1}^{N} \sum_{m=1}^{M} \theta_{\psi_n}^m(s, a)\right)
+        \]
+        \State Update $\psi_n$ with gradient descent using for $n=1,\ldots,C$:
+        \[
+            \nabla_{\psi_i} \frac{1}{KkCM} \sum_{(s,a) \in B} \sum_{m=1}^M \sum_{i=1}^{kC} \rho_{\tau_m}^H \left( y_i(s,a) - \theta_{\psi_n}^{m}(s,a)\right)
+        \]
         \vspace{1pt}
         \State  $\overline{\psi}_n \leftarrow  \beta \psi_n  + (1 - \beta) \overline{\psi}_n $ for $n\in[1..C]$
     \EndFor
@@ -370,7 +379,7 @@ Chen et al \cite{chenRandomizedEnsembledDouble2021} made an algorithm to increas
 
 The ensemble of $C$ critics is trained towards a target which is the minimum of a random subset $M$ of the critics. This target is in turn used to update all of the critics. The policy is optimized using the average of the critics. With an $C = 10$ and $M = 2$ the algorithm was able to handle a UTD of 20 \cite{chenRandomizedEnsembledDouble2021}. The authors reference implementation of the algorithm is built of SAC \ref{subsec:SAC} and interesting turns back into SAC if $C=M=2$ and $UTD=1$.
 
-At the time it was the first model-free algorithm to be able to handle a UTD greater than 1. This higher ratio allows for a increase in sample efficiency as it is extracting more information from the replay buffer per time step. This does however increase the computational cost as each time step requires $C \times UTDC$ gradient descent steps and $M$ forward passes.
+At the time it was the first model-free algorithm to be able to handle a UTD greater than 1. This higher ratio allows for an increase in sample efficiency as it is extracting more information from the replay buffer per time step. This does however increase the computational cost as each time step requires $C \times UTD$ gradient descent steps and $M$ forward passes.
 
 Pseudo code for the algorithm taken from the paper \cite{chenRandomizedEnsembledDouble2021} with some modifications for clarity is shown below:
 
@@ -378,7 +387,7 @@ Pseudo code for the algorithm taken from the paper \cite{chenRandomizedEnsembled
 \begin{algorithm}[H]
 \caption{Randomized Ensembled Double Q-learning (REDQ)}
 \begin{algorithmic}[1]
-\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $z\lambda_{\pi}, \lambda_{Q}$, number of critics $C$, target critic update rate $\beta$, entropy coefficient $\alpha$ critic subsets $M$, Updates to Data ratio UTD, and neural network function approximator $Q$ and $\pi$}
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda_{\pi}, \lambda_{Q}$, number of critics $C$, target critic update rate $\beta$, entropy coefficient $\alpha$ critic subsets $M$, Updates to Data ratio UTD, and neural network function approximator $Q$ and $\pi$}
 \State Initialize policy parameters $\theta$, $C$ Q-function parameters $\phi_{i}$, $i=1,\ldots,N$, empty replay buffer $\mathcal{D}$. Set target parameters $\phi_{\text {targ}, i} \leftarrow \phi_{i}, \text{ for } i =1, 2, \ldots, N$
 
 \Repeat
@@ -413,14 +422,14 @@ Pseudo code for the algorithm taken from the paper \cite{chenRandomizedEnsembled
 
 The big draw back of REDQ \ref{subsec:REDQ} is that it requires a large number of critics to be able to handle a UTD greater than 1. Hiraoka et al \cite{hiraokaDropoutQFunctionsDoubly2022} proposed a method called Dropout Q-functions (DROQ) which uses a smaller number of critics and instead uses dropout and layer normalization to handle the UTD. This allows for a similar sample efficiency at about half the computational cost (DroQ is about 2x faster than REDQ) \cite{hiraokaDropoutQFunctionsDoubly2022}.
 
-Dropout layers \cite{srivastavaDropoutSimpleWay2014} are used within the critic networks to randomly drop out neurons during training. It is used within the deep learning community to help prevent overfitting. The intuition being that be randomly removing neurons the networks has to learn features that are not reliant on single neurons. However in this setting it is being used to model the uncertainty in the Q-value. Layer normalization \cite{baLayerNormalization2016} is used after the dropout layer which increases the effectiveness of the dropout layer.
+Dropout layers \cite{srivastavaDropoutSimpleWay2014} are used within the critic networks to randomly drop out neurons during training. It is used within the deep learning community to help prevent overfitting. The intuition being that randomly removing neurons forces the networks to learn features that are not reliant on single neurons. However in this setting it is being used to model the uncertainty in the Q-value. Layer normalization \cite{baLayerNormalization2016} is used after the dropout layer which increases the effectiveness of the dropout layer.
 
-Because it is using a smaller ensemble of critics it uses all of the critics when creating the target. This is different from REDQ \ref{subsec:REDQ} which uses a random subset of the critics. Other than this the algorithm is almost identical to REDQ as seen below:
+Because it is using a smaller ensemble of critics it uses all of the critics when creating the target. This is different from REDQ \ref{subsec:REDQ} which uses a random subset of the critics. Other than this the algorithm is almost identical to REDQ as seen below (red highlights the differences):
 
 \begin{algorithm}[H]
-\caption{Randomized Ensembled Double Q-learning (REDQ)}
+\caption{Dropout Q-functions (DroQ)}
 \begin{algorithmic}[1]
-\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $z\lambda_{\pi}, \lambda_{Q}$, number of critics $C$, target critic update rate $\beta$, entropy coefficient $\alpha$, Updates to Data ratio UTD, and neural network function approximator $Q$ and $\pi$}
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda_{\pi}, \lambda_{Q}$, number of critics $C$, target critic update rate $\beta$, entropy coefficient $\alpha$, \textcolor{red}{dropout rate}, Updates to Data ratio UTD, and neural network function approximator $Q$ and $\pi$}
 \State Initialize policy parameters $\theta$, $C$ Q-function parameters $\phi_{i}$, $i=1,\ldots,N$, empty replay buffer $\mathcal{D}$. Set target parameters $\phi_{\text {targ}, i} \leftarrow \phi_{i}, \text{ for } i =1, 2, \ldots, N$
 
 \Repeat
@@ -430,19 +439,19 @@ Because it is using a smaller ensemble of critics it uses all of the critics whe
         \State Sample a mini-batch $B=\left\{\left(s, a, r, s^{\prime} \right)\right\}$ from $\mathcal{D}$ of size $K$
         \State Compute the Q target $y$ (same for all of the $C$ Q-functions):
         \[
-        y=r+\gamma\left(\min _{i\in C} Q_{Dr, \phi_{\text {targ},i}}\left(s^{\prime}, \tilde{a}^{\prime}\right)-\alpha \log \pi_{\theta}\left(\tilde{a}^{\prime} \mid s^{\prime}\right)\right),\quad \tilde{a}^{\prime} \sim \pi_{\theta}\left(\cdot \mid s^{\prime}\right)
+        y=r+\gamma\left(\textcolor{red}{\min _{i\in C} Q_{Dr, \phi_{\text {targ},i}}}\left(s^{\prime}, \tilde{a}^{\prime}\right)-\alpha \log \pi_{\theta}\left(\tilde{a}^{\prime} \mid s^{\prime}\right)\right),\quad \tilde{a}^{\prime} \sim \pi_{\theta}\left(\cdot \mid s^{\prime}\right)
         \]
         \For{$i=1,\ldots,C$}
             \State Update $\phi_i$ with gradient descent using
             \[
-            \nabla_{\phi} \frac{1}{K} \sum_{\left(s, a, r, s^{\prime} \right) \in B}\left(Q_{Dr, \phi_{i}}(s, a)-y\right)^{2} 
+            \nabla_{\phi} \frac{1}{K} \sum_{\left(s, a \right) \in B}\left(\textcolor{red}{Q_{Dr, \phi_{i}}}(s, a)-y\right)^{2} 
             \]
             \State Update target networks with $\phi_{\operatorname{targ},i} \leftarrow \beta \phi_{\operatorname{targ},i}+(1-\beta) \phi_{i}$
         \EndFor
     \EndFor
     \State Update policy parameters $\theta$ with gradient ascent using
     \[
-    \nabla_{\theta} \frac{1}{K} \sum_{s \in B}\left(\frac{1}{C}\sum_{i =1}^{C} Q_{Dr,\phi_{i}}\left(s, \tilde{a}_{\theta}(s)\right)-\alpha \log \pi_{\theta}\left(\tilde{a}_{\theta}(s) | s\right)\right),
+    \nabla_{\theta} \frac{1}{K} \sum_{s \in B}\left(\frac{1}{C}\sum_{i =1}^{C} \textcolor{red}{Q_{Dr,\phi_{i}}}\left(s, \tilde{a}_{\theta}(s)\right)-\alpha \log \pi_{\theta}\left(\tilde{a}_{\theta}(s) | s\right)\right),
     \quad \tilde{a}_{\theta}(s) \sim \pi_{\theta}(\cdot \mid s)
     \]
 \Until{stopping criteria is met}
@@ -453,9 +462,9 @@ Because it is using a smaller ensemble of critics it uses all of the critics whe
 \subsection{Cross Q-learning}\label{subsec:CROSSQ}
 
 
-The goal of both REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} is to increase the sample efficiency and they achieve it by using a UTD > 1 (typically around 20). However they both come at a computational cost which increases with the number of updates to the data ratio. CrossQ \cite{bhattCrossQBatchNormalization2024} is simple improvement on SAC \ref{subsec:SAC} which removes the target networks which allows it to use batch normalization \cite{ioffeBatchRenormalizationReducing2017}. This combination allows it to achieve higher sample efficient than REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} while being about 4 times faster. Furthermore much wider critic networks (~2000) are used to as it further increases the sample efficiency however not as much as the combination of the previous two.
+The goal of both REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} is to increase the sample efficiency and they achieve it by using a UTD $\gg$ 1 (typically around 20). However they both come at a computational cost which increases with the number of updates to the data ratio. CrossQ \cite{bhattCrossQBatchNormalization2024} instead is just a simple improvement on SAC \ref{subsec:SAC} which removes the target networks allowing it to use batch normalization \cite{ioffeBatchRenormalizationReducing2017}. This combination allows it to achieve higher sample efficiency than REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} while being about 4 times faster. It is much faster because it only have a UTD of 1. Furthermore much wider critic networks (~2000) are used to as it further increases the sample efficiency however not as much as the combination of the previous two \cite{bhattCrossQBatchNormalization2024}.
 
-To allow the batch normalization to work without the target networks we combine the calculation current Q-value and the next Q-value. This is done by concatenating the current state and action with the next state and action. This means that the loss function is changed from what we see in SAC \ref{subsec:SAC}:
+To allow the batch normalization to work without the target networks we combine the calculation of the current Q-value and the next Q-value. This is done by concatenating the current state and action with the next state and action. This means that the loss function is changed from what we see in SAC \ref{subsec:SAC} which is:
 
 \begin{equation}
     J_Q(\theta) = \mathbb{E}_{(s,a,r,s') \sim \mathcal{D}} \left[ \left( Q_{\theta}(s,a) - r - \gamma Q_{\bar{\theta}}(s',\pi_{\phi}(s')) \right)^2 \right]
@@ -472,4 +481,4 @@ Where $Q_\theta( \left[ \begin{matrix} S_t \\ S_{t+1} \end{matrix}\right], \left
 \smallskip
 
 
-These changes are applied to SAC \ref{subsec:SAC} in the paper however the changes could be applied to other off policy TD learning based algorithms. The algorithm is identical to the SAC algorithm \ref{subsec:SAC} and so wont be shown again here. The differences are in the loss function and the batch normalization in the critic networks. Furthermore CrossQ uses a UTD of 1 with a policy delay of 3.
+These changes are applied to SAC \ref{subsec:SAC} in the paper however the changes could be applied to other off policy TD learning based algorithms. The algorithm is identical to the SAC algorithm \ref{subsec:SAC} and so wont be shown again here. The differences are in the loss function and the batch normalization in the critic networks.
