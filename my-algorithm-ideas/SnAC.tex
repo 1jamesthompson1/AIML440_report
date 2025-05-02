@@ -1,0 +1,119 @@
+\documentclass[12pt]{article}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\geometry{a4paper, margin=1in}
+
+% Title and Author
+\title{Soft n Actor-Critic Reinforcement Learning Algorithm}
+\author{James Thompson}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+The idea of the Soft n Actor-Critic (SnAC) is to use multiple actors which are guided by a single critic. Itr is based off SAC. This single critic is used to help evaluate the potential actions that the ensemble of actors offer. The use of the ensemble of actors allows for each actors to explore and specilize in different areas of the state space. This idea takes rough inspiration from the idea of Mixute of expert models in supervised learning.
+
+\section{The SnAC Algorithm}
+
+SnAC is very similiar to the Soft Actor-Critic algorithm. I uses a simliar structure as well as similar objective functions. The main difference is that SnAC uses multiple actors that have their polices aggregated to form a single action selection.
+
+As it is a variant of SAC it uses the same objective functions for both critic training (Equation~\ref{eq:critic_objective}) and the entropy coefficient (Equation~\ref{eq:entropy_objective}). There is a slight difference however as the objective functions are using the previously used actor.
+
+\begin{equation}
+\label{eq:critic_objective}
+\hat{\nabla}_{\theta} J_Q(\theta) = \nabla_{\theta} Q_{\theta}(a_t, s_t) \left(Q_{\theta}(s_t, a_t) - \left(r_{t} + \gamma \left(Q_{\bar{\theta}}(s_{t+1}, a_{t+1}) - \alpha \log \left(\pi_{\phi_{i_\pi}}(a_{t+1} | s_{t+1})\right)\right)\right)\right)
+\end{equation}
+\begin{equation}
+\label{eq:entropy_objective}
+\nabla_{\alpha} J(\alpha) = -\log \pi_t(a_t \mid s_t) - \mathcal{H}
+\end{equation}
+
+What is different is the way that the actors are trained and the objective function. The actors are trained using an objective function that 
+
+To ensure that the policies do not converge too closely to each other, we introduce a diversity-promoting term in the policy objective function. The objective function for each policy $\pi_{\phi_i}$ is defined as:
+
+\begin{equation}
+\label{eq:policy_objective}
+J_{\pi}(\phi_i) = \mathbb{E}_{s_t \sim \mathcal{D}} \left[ \min_{j \in \{1, 2\}} Q_{\theta_j}(s_t, ) - \alpha_{\text{div}} \sum_{k \neq i} \text{KL}(\pi_{\phi_i} \| \pi_{\phi_k}) \right]
+\end{equation}
+
+Here:
+\begin{itemize}
+    \item $\min_{j \in \{1, 2\}} Q_{\theta_j}(s_t, a_t)$ ensures the policy maximizes the minimum critic estimate which is used in the SAC algorithm.
+    \item $\alpha_{\text{div}}$ is a hyperparameter controlling the strength of the diversity term. \textit{Maybe this could be learned in a similar way to the entropy coefficient}.
+    \item $\text{KL}(\pi_{\phi_i} \| \pi_{\phi_k})$ is the Kullback-Leibler divergence between the current policy $\pi_{\phi_i}$ and another policy $\pi_{\phi_k}$, encouraging policies to remain distinct.
+\end{itemize}
+
+This objective ensures that each policy maximizes its expected return while maintaining diversity among the ensemble of policies.
+
+\begin{algorithm}[H]
+\caption{Soft n Actor-Critic Algorithm}
+\label{alg:SAC}
+\begin{algorithmic}[1]
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environemt steps $S$, number of actors $n$, ensemble aggregation function $\texttt{agg}$, policy divergence coefficient $\alpha_{\text{div}}$, neural network function approximator $Q$, neural network function approximator $\pi$ and initial entropy coefficient $\alpha$.}
+\State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
+\State Initialize policies $\pi_{\phi_i}$ with random weights $\phi_i$ for $i \in \{1, ..., n\}$
+\State Initialize both action-value function $Q_{\theta_i}$ with random weights 
+$\theta_i$
+\State Initialize $\bar{\theta}_{i} \leftarrow \theta_{i}$ for $i \in \{1,2\}$
+\Repeat
+    \For{ $S$ steps}
+        \State Enumerate action options: $a_{t_{i}} \sim \pi_{\phi_{i}}(a_{t} | s_{t})$ for $i \in \{1, ... , n\}$
+        \State Choose action $a_{t} \gets \text{agg}(\{a_{t_{1}}, ... , a_{t_{n}}\}, {\theta_1, \theta_2})$ and note the used policy index $i_\pi$
+        \State Observe reward $r_{t}$ and next state $s_{t+1}$
+        \State Store transition $(s_{t}, a_{t}, r_{t}, s_{t+1})$ in $\mathcal{D}$
+    \EndFor
+    \For{UTD times}
+        \State Update Q-functions: $\theta_{i} \gets \theta_{i} - \lambda_{Q} \hat{\nabla}_{\theta_{i}} J_{Q}(\theta_{i})$ for $i \in \{1,2\}$
+        \State Update policy: $\phi_i \gets \phi_i - \lambda_{\pi} \hat{\nabla}_{\phi_i} J_{\pi}(\phi_i)$ for $i \in \{1,...,n\}$
+        \State Update entropy coefficient: $\alpha \gets \alpha - \lambda \hat{\nabla}_{\alpha} J(\alpha)$
+        \State Update target Q-networks: $\bar{\theta_{i}} \gets \tau\theta_{i} + (1 - \tau) \bar{\theta_{i}}$ for $i \in \{1,2\}$
+    \EndFor
+\Until{stopping criteria is met}
+
+\end{algorithmic}
+\end{algorithm}
+
+\section{Potential Aggregation functions}
+
+As all of the ensemble of actors are trained and kept seperate from each other at any state there are $n$ number of potential actions which are provided by the actors.
+
+\subsection{Single selection}
+
+Using the highestest experected reward then we are just doing a modified version of q-learning. Where all the polices are doing is providing a subset to look at. Alternatively one could simply randomly select  on e the actions, however this would remove the potential benefit of having actors "specilize" in differnet areas of the state space. However an inbetween approach could be to do a weighted random selection based on the expected reward of the action.
+
+\subsection{Average of actions}
+For a continouis contorl task the action is a bunch of forces to be applied to the various joints. Therefore we could take the average of the actions by either element wise (average move for each joint) or by taking the geomtric average of the actions.
+
+\subsection{Different ways to compute the average vector}
+
+When aggregating actions by averaging, there are multiple ways to compute the average vector:
+
+\begin{itemize}
+    \item \textbf{Element-wise average:} Compute the average (arithmatic or median) for each dimension of the action vector independently. This is straightforward and ensures that each component of the action is averaged across all actors.
+    \item \textbf{Weighted average:} Assign weights to each actor's action by using critic network and compute a weighted average.
+\end{itemize}
+
+\section{Other ideas}
+
+\subsection{Policy aware critic}
+Currently the critic is a function that just takes in the state and action. It is plausible for a critic to learn quite a general state action value function. However, giving the critic a simple indicator of which policy we would be using would mean that it could learn more spcific values for each policy. This would mean that it would need more data to learn as only the policy which are used can be used to update the critic.
+
+\subsection{Using a multi headed actor instead of multiple actors}
+The actors are all individual polices with there own network. It could be effective instead to use a single multi headed actor. This will speed up training time and provide some bounds on how distinct the policies can be. However my sense could be that the benfit of having "experts" for differnet situations may be lost by forcing the internal repsentation to be the same.
+
+\section{Conclusion}
+
+The Soft n Actor-Critic (SnAC) algorithm is a simple change to the Soft Actor-Critic algorithm. By using mulitple actors we can allow for differnet actors to specilize in different areas of the state space and provide a more diverse set of actions. The use of of a single critic allows it to learn a general approximation of state action values. The diverse set of actions can be aggregated into a single action using this general critic.
+
+\end{document}
