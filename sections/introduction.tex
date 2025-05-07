@@ -1,6 +1,6 @@
 \chapter{Introduction}\label{C:intro}
 
-\subsection{The reinforcement learning problem}
+\section{The reinforcement learning problem}
 
 Reinforcement learning is a framework that describes how an agent learns by interacting with the environment. The framework involves 2 entities the agent and environment. The agent is the only entity that we as designers have direct control of. We decide how its learns and decides on its actions. The environment is the context and situation that the agent is in. There are three important flows of information;  the state of the environment to the agent, the action decision to the environment and lastly the reward to the agent. This can be best be understood in the figure below.
 
@@ -30,7 +30,7 @@ The state is a representation of the information within the environment that the
     \label{quote:reward}
 \end{quote}
 
-\subsection{Formalism}
+\section{Formalism}
 
 The reinforcement problem can be formalised as a Markov Decision Process (MDP). The MDP is a collection of states, actions and rewards along with a transition function which states the probability of the next reward and state given a state and reward. This makes the MDP a 4-tuple $(S,\mathcal{A}, \mathcal{P}, R)$ where $S$ is the set of states, $\mathcal{A}(s)$ is the set of actions that can be taken from state $s$, $\mathcal{P}$ is the transition function and $R \subset \mathbb{R}$ is the set of rewards. The transition function is defined as:
 

@@ -172,6 +172,7 @@ The final SAC algorithm \cite{haarnojaSoftActorCriticAlgorithms2019} modified fo
 
 \begin{algorithm}[H]
 \caption{Soft Actor-Critic Algorithm}
+\label{alg:SAC}
 \begin{algorithmic}[1]
 \Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environemt steps $S$, neural network function approximator $Q$}, neural network function approximator $\pi$ and initial entropy coefficient $\alpha$.
 \State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
@@ -202,23 +203,19 @@ Between 2018 and 2019, when SAC was first introduced, it outperformed other popu
 
 \subsection{Proximal Polixy Optimizatin}\label{subsec:PPO}
 
-One of the instabilities in RL algorithms is that a change in the actions taken by a policy can have large consequences, both good and bad. A natural idea is to try and limit the changes that can happen to a policy at any step. You can do this by using a surrogate objective function that is limited to be at least somewhat similar to the current policy. This was first implemented using a trust region (i.e an area that we can safely move the policy and is guaranteed to improve) and resulted in the TRPO algorithm \cite{schulmanTrustRegionPolicy2017}. Yet the most popular method is that of PPO \cite{schulmanProximalPolicyOptimization2017}, as it is computationally simpler. The method used in PPO is to use a clipped objective which results in a loss function like so:
-
+One of the instabilities in RL algorithms is that a change in the actions taken by a policy can have large consequences, both good and bad. A natural idea is to try and limit the changes that can happen to a policy at any step. You can do this by using a surrogate objective function that is limited to be at least somewhat similar to the current policy. This was first implemented using a trust region (i.e an area that we can safely move the policy and is guaranteed to improve) and resulted in the TRPO algorithm \cite{schulmanTrustRegionPolicy2017}. Yet the most popular method is that of PPO \cite{schulmanProximalPolicyOptimization2017}, as it is computationally simpler. The method used in PPO is to use a clipped objective which results in a loss function like so: 
 \begin{equation}
 L^{\text{CLIP}}(s,a,\theta_k,\theta) = \min\left(
 \frac{\pi_{\theta}(a|s)}{\pi_{\theta_k}(a|s)}  A^{\pi_{\theta_k}}(s,a), \;\;
 \text{clip}\left(\frac{\pi_{\theta}(a|s)}{\pi_{\theta_k}(a|s)}, 1 - \epsilon, 1+\epsilon \right) A^{\pi_{\theta_k}}(s,a)
 \right)
 \end{equation}
-
 Where the advantage function ($A^{\pi_{\theta_{k}}}(s,a)$) is a way of measuring how much better the situation is than expected. The ratio $\frac{\pi_{\theta}(a|s)}{\pi_{\theta_{k}}(a|s)}$ is used to measure the difference between the current policy and the old policy. This ratio is what is clipped and used as a scalar for the advantage function. As we see in the situation that the action was better ($A>0$) the clip function will apply and make sure that $L$ wont be too large, however it can be as small as 0. In the other case when things were worse than expected ($A < 0$) it capped to make $L$ not close to zero (note that $L$ will be negative), yet $L$ could be as large (in the negative sense) as it would like. The reasoning is that allowing for these large and negative $L$ means that we can do a better job of making sure that this action is not taken again.
 
 The advantage function can be can be estimated in many ways . A simple advantage function could be actual return - estimated return ($G_{t} - V(s_{t})$) for episodic tasks, or TD error ($r_{t}+\gamma V(s_{t+1})-V(s_{t})$) for continuing tasks. The implementation in the paper use generalised advantage estimation which is an exponentially weighted sum of TD errors \cite{schulmanHighDimensionalContinuousControl2015}, as it better balances bias and variance. GAE is defined as:
-
 \begin{equation}
 \hat{A_{t}}^{GAE(\gamma, \lambda)} = \sum_{t=0}^{\infty}(\gamma\lambda)^{l}\delta_{t+l}^{V}
 \end{equation}
-
 Where $\delta_{t}^{V}=r_{t}+\gamma V(s_{t}+1)-V(s_{t})$. $\gamma$ is the usual discounting factor but this is expanded on with $\lambda$ which is from 0-1, at 0 it is TD(0) error and at 1 would be the full complete return.
 
 With this advantage estimator we need to learn a value function. This puts PPO in the same style of actor-critic methods. It is however regarded as a Policy gradient method starting with the author Schulman designating it so \cite{schulmanProximalPolicyOptimization2017}.
@@ -336,14 +333,12 @@ It approximates the distribution with $M$ number of quantiles. each predicting t
 
 Rather than just having a single critic, TQC uses $N$ critics. It takes all of the quantiles from the critics and mixes them together to form a single distribution. From there it truncates the top $k$ values. Kuznetsov et al \cite{kuznetsovControllingOverestimationBias2020} posits that the order of mixing then truncating rather than truncating and mixing is important. These quantiles are then used to create a target which the critics are trained towards. In practice target critic networks are also used as well to stabilize the learning process.
 
-Note that the policy is optimized using the untruncated distributions from the critics because there is not the same feedback that causes an overestimation bias.
-
 The algorithm from the paper \cite{kuznetsovControllingOverestimationBias2020} with slight modifications is shown below:
 
 \begin{algorithm}[H]
 \caption{Truncated Quantile Critics (TQC)}
 \begin{algorithmic}[1]
-\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates; $\lambda_{\alpha}, \lambda_{\pi}, \lambda_{Q}$, number of critics $C$, truncation amount $k$, number of quantiles $M$, target critic update rate $\beta$, update frequency $d$, Updates to Data ratio UTD, and neural network function approximator $Z$ and $\pi$}
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates; $\lambda_{\alpha}, \lambda_{\pi}, \lambda_{Q}$, number of critics $C$, truncation amount $k$, number of quantiles $M$, target critic update rate $\beta$, Updates to Data ratio UTD, and neural network function approximator $Z$ and $\pi$}
 \State Initialize replay buffer $\mathcal{D}$
 \State Initialize policy $\pi_{\phi}$ and $C$ critics $Z_{\psi_i}$, $Z_{\overline{\psi}_i}$ with random parameters $\psi_i$
 \State Set $\alpha = 1$ and $\mathcal{H}_T = -\dim \mathcal{A}$
@@ -352,7 +347,7 @@ The algorithm from the paper \cite{kuznetsovControllingOverestimationBias2020} w
     \State Run policy $\pi_{\phi}$ in environment until termination or truncation
     \State Append trajectories $(s_t, a_t, r_t, s_{t+1})_{t=0}^{T-1}$ to $\mathcal{D}$
     \For{UTD times}
-        \State sample a batch $B$ of size $K$ from the replay $\mathcal{D}$
+        \State Sample a batch $B$ of size $K$ from the replay $\mathcal{D}$
         \State Update $\alpha$ with gradient descent using
         \[
         \nabla_{\alpha} \frac{1}{K} \sum_{(s,a)\in B} \log \alpha (-\log \pi_{\phi}(a|s)- \mathcal{H}_T) 
@@ -372,6 +367,7 @@ The algorithm from the paper \cite{kuznetsovControllingOverestimationBias2020} w
 \end{algorithmic}
 \end{algorithm}
 
+We can see that this algorithm is similar to that of SAC \ref{subsec:SAC} in that it uses a replay buffer, target networks and entropy maximization. It varies from SAC in that the interaction of the environments is done until termination or truncation where the truncation. That means that a complete episode is completed in-between each update. It is also important to note that the policy is optimized using the untruncated distributions from the critics because there is not the same feedback that causes an overestimation bias.
 
 \subsection{Randomized Ensemble Double Q-Learning}\label{subsec:REDQ}
 
@@ -379,7 +375,7 @@ Chen et al \cite{chenRandomizedEnsembledDouble2021} made an algorithm to increas
 
 The ensemble of $C$ critics is trained towards a target which is the minimum of a random subset $M$ of the critics. This target is in turn used to update all of the critics. The policy is optimized using the average of the critics. With an $C = 10$ and $M = 2$ the algorithm was able to handle a UTD of 20 \cite{chenRandomizedEnsembledDouble2021}. The authors reference implementation of the algorithm is built of SAC \ref{subsec:SAC} and interesting turns back into SAC if $C=M=2$ and $UTD=1$.
 
-At the time it was the first model-free algorithm to be able to handle a UTD greater than 1. This higher ratio allows for an increase in sample efficiency as it is extracting more information from the replay buffer per time step. This does however increase the computational cost as each time step requires $C \times UTD$ gradient descent steps and $M$ forward passes.
+At the time it was the first model-free algorithm to be able to handle a UTD greater than 1. This higher ratio allows for an increase in sample efficiency as it is extracting more information from the replay buffer per time step. This does however increase the computational cost as each time step requires $C \times UTD$ gradient descent steps and $M$ forward passes. In practice this means that it is doing 200 gradient descents per time step rather than the 1 that TQC \ref{subsec:TQC} and SAC \ref{subsec:SAC} do.
 
 Pseudo code for the algorithm taken from the paper \cite{chenRandomizedEnsembledDouble2021} with some modifications for clarity is shown below:
 
@@ -394,7 +390,7 @@ Pseudo code for the algorithm taken from the paper \cite{chenRandomizedEnsembled
     \State Select action: $a_{t} \sim \pi_{\theta}(a_{t} | s_{t})$ and observe reward $r_{t}$ and next state $s_{t+1}$
     \State Store transition $(s_{t}, a_{t}, r_{t}, s_{t+1})$ in $\mathcal{D}$
     \For {$UTD$ times}
-        \State Sample a mini-batch $B=\left\{\left(s, a, r, s^{\prime} \right)\right\}$ from $\mathcal{D}$ of size $K$
+        \State Sample a batch $B$ of size $K$ from the replay $\mathcal{D}$
         \State Sample a set $\cal{M}$ of $M$ distinct indices from $\{1, 2, \ldots, C\}$
         \State Compute the Q target $y$ (same for all of the $C$ Q-functions):
         \[
@@ -417,14 +413,16 @@ Pseudo code for the algorithm taken from the paper \cite{chenRandomizedEnsembled
 \end{algorithmic}
 \end{algorithm}
 
+The algorithm uses some of the same stabilization tricks like replay buffer, entropy maximization and target networks. However the structure is a bit different, it only does one action followed by some number of gradient updates and lastly a single policy update. 
+
 
 \subsection{Dropout Q-functions}\label{subsec:DROQ}
 
-The big draw back of REDQ \ref{subsec:REDQ} is that it requires a large number of critics to be able to handle a UTD greater than 1. Hiraoka et al \cite{hiraokaDropoutQFunctionsDoubly2022} proposed a method called Dropout Q-functions (DROQ) which uses a smaller number of critics and instead uses dropout and layer normalization to handle the UTD. This allows for a similar sample efficiency at about half the computational cost (DroQ is about 2x faster than REDQ) \cite{hiraokaDropoutQFunctionsDoubly2022}.
+The big draw back of REDQ \ref{subsec:REDQ} is that it requires a large number of critics to be able to handle a UTD greater than 1. Hiraoka et al \cite{hiraokaDropoutQFunctionsDoubly2022} proposed a method called Dropout Q-functions (DroQ) which uses a smaller number of critics and instead uses dropout and layer normalization to handle the UTD. This allows for a similar sample efficiency at about half the computational cost (DroQ is about 2x faster than REDQ) \cite{hiraokaDropoutQFunctionsDoubly2022}.
 
 Dropout layers \cite{srivastavaDropoutSimpleWay2014} are used within the critic networks to randomly drop out neurons during training. It is used within the deep learning community to help prevent overfitting. The intuition being that randomly removing neurons forces the networks to learn features that are not reliant on single neurons. However in this setting it is being used to model the uncertainty in the Q-value. Layer normalization \cite{baLayerNormalization2016} is used after the dropout layer which increases the effectiveness of the dropout layer.
 
-Because it is using a smaller ensemble of critics it uses all of the critics when creating the target. This is different from REDQ \ref{subsec:REDQ} which uses a random subset of the critics. Other than this the algorithm is almost identical to REDQ as seen below (red highlights the differences):
+As DroQ uses a smaller ensemble of critics it does to take a subset and instead uses all of the critics to create the critic target for critic updating. This is in contrast to REDQ \ref{subsec:REDQ} which uses a random subset of the critics. Other than this the algorithm is almost identical to REDQ as seen below (red highlights the differences):
 
 \begin{algorithm}[H]
 \caption{Dropout Q-functions (DroQ)}
@@ -462,7 +460,7 @@ Because it is using a smaller ensemble of critics it uses all of the critics whe
 \subsection{Cross Q-learning}\label{subsec:CROSSQ}
 
 
-The goal of both REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} is to increase the sample efficiency and they achieve it by using a UTD $\gg$ 1 (typically around 20). However they both come at a computational cost which increases with the number of updates to the data ratio. CrossQ \cite{bhattCrossQBatchNormalization2024} instead is just a simple improvement on SAC \ref{subsec:SAC} which removes the target networks allowing it to use batch normalization \cite{ioffeBatchRenormalizationReducing2017}. This combination allows it to achieve higher sample efficiency than REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} while being about 4 times faster. It is much faster because it only have a UTD of 1. Furthermore much wider critic networks (~2000) are used to as it further increases the sample efficiency however not as much as the combination of the previous two \cite{bhattCrossQBatchNormalization2024}.
+The goal of both REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} is to increase the sample efficiency and they achieve it by using a UTD $\gg$ 1 (typically around 20). However they both come at a computational cost which increases which increases linearly with the UTD. CrossQ \cite{bhattCrossQBatchNormalization2024} instead is just a simple improvement on SAC \ref{subsec:SAC} which removes the target networks allowing it to use batch normalization \cite{ioffeBatchRenormalizationReducing2017}. This combination allows it to achieve higher sample efficiency than REDQ \ref{subsec:REDQ} and DROQ \ref{subsec:DROQ} while being computationally simpler resulting in about 4 times faster (using wall clock measurements). It gains this computational advantage by using a UTD of 1. Much wider critic networks (~2000) are also used as it further increases the sample efficiency \cite{bhattCrossQBatchNormalization2024}.
 
 To allow the batch normalization to work without the target networks we combine the calculation of the current Q-value and the next Q-value. This is done by concatenating the current state and action with the next state and action. This means that the loss function is changed from what we see in SAC \ref{subsec:SAC} which is:
 
@@ -473,12 +471,36 @@ To allow the batch normalization to work without the target networks we combine 
 To no longer use the target network and instead the output from a single Q-function:
 
 \begin{equation}
-    J_Q(\theta) = \mathbb{E}_{(s,a,r,s') \sim \mathcal{D}} \left[ \left( q_t - r - \gamma q_{t+1}) \right)^2 \right]
+    J_{Q_{BRN}}(\theta) = \mathbb{E}_{(s,a,r,s') \sim \mathcal{D}} \left[ \left( q_t - r - \gamma q_{t+1}) \right)^2 \right] \text{ and } Q_{BRN,\theta}( \left[ \begin{matrix} S \\ S' \end{matrix}\right], \left[ \begin{matrix} A \\ \pi_\psi(s') \end{matrix}\right]) = \left[ \begin{matrix} q_t \\ q_{t+1} \end{matrix}\right]
 \end{equation}
 
-Where $Q_\theta( \left[ \begin{matrix} S_t \\ S_{t+1} \end{matrix}\right], \left[ \begin{matrix} A_t \\ A_{t+1} \end{matrix}\right]) = \left[ \begin{matrix} q_t \\ q_{t+1} \end{matrix}\right]$. 
+This concatenation is important as it allows the batch normalization to work as half of the data is from the distribution made with the current policy and the other half is from the distribution made with the updated policy. Because it is half and half none of the data is out of distribution so that normlization works as expected.
 
-\smallskip
+These changes are applied to SAC \ref{subsec:SAC} in the paper however the changes could be applied to other off policy TD learning based algorithms. The algorithm is almost identical to the SAC algorithm which can be found here \ref{alg:SAC}. The differences are highlighted in red below:
 
 
-These changes are applied to SAC \ref{subsec:SAC} in the paper however the changes could be applied to other off policy TD learning based algorithms. The algorithm is identical to the SAC algorithm \ref{subsec:SAC} and so wont be shown again here. The differences are in the loss function and the batch normalization in the critic networks.
+\begin{algorithm}[H]
+\caption{Cross Q-learning (CrossQ)}
+\label{alg:CROSSQ}
+\begin{algorithmic}[1]
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environemt steps $S$, neural network function approximator $Q$}, neural network function approximator $\pi$ and initial entropy coefficient $\alpha$.
+\State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
+\State Initialize policy $\pi_{\phi}$ with random weights $\phi$
+\State Initialize both action-value function $Q_{\theta_i}$ with random weights 
+$\theta_i$
+\Repeat
+    \For{ $S$ steps}
+        \State select action: $a_{t} \sim \pi_{\phi}(a_{t} | s_{t})$
+        \State Observe reward $r_{t}$ and next state $s_{t+1}$
+        \State Store transition $(s_{t}, a_{t}, r_{t}, s_{t+1})$ in $\mathcal{D}$
+    \EndFor
+    \For{UTD times}
+        \State Update Q-functions: $\theta_{i} \gets \theta_{i} - \textcolor{red}{\lambda_{Q_{BRN}}} \hat{\nabla}_{\theta_{i}} \textcolor{red}{J_{Q_{BRN}}}(\theta_{i})$ for $i \in \{1,2\}$
+        \State Update policy: $\phi \gets \phi - \lambda_{\pi} \hat{\nabla}_{\phi} J_{\pi}(\phi)$
+        \State Update entropy coefficient: $\alpha \gets \alpha - \lambda \hat{\nabla}_{\alpha} J(\alpha)$
+    \EndFor
+\Until{stopping criteria is met}
+
+\end{algorithmic}
+\end{algorithm}
+The differences are in the loss function as mentioned above, critic networks that have batch normalisation and the removal of target networks.
