@@ -25,7 +25,7 @@ The idea of the Soft n Actor-Critic (SnAC) is to use multiple actors which are g
 
 \section{The SnAC Algorithm}
 
-SnAC is very similiar to the Soft Actor-Critic algorithm. I uses a simliar structure as well as similar objective functions. The main difference is that SnAC uses multiple actors that have their polices aggregated to form a single action selection.
+SnAC is very similar to the Soft Actor-Critic algorithm. I uses a simliar structure as well as similar objective functions. The main difference is that SnAC uses multiple actors that have their polices aggregated to form a single action selection.
 
 As it is a variant of SAC it uses the same objective functions for both critic training (Equation~\ref{eq:critic_objective}) and the entropy coefficient (Equation~\ref{eq:entropy_objective}). There is a slight difference however as the objective functions are using the previously used actor.
 

@@ -17,12 +17,12 @@ SAC, PPO, DQN and TD3 & Stable baselines3 \cite{stable-baselines3} \\
 TQC & My own updated copy of the authors implementation \cite{thompson1jamesthompson1Tqc_pytorch2025} \cite{SamsungLabsTqc_pytorchImplementation} \\
 REDQ & My own copy of the authors implementation \cite{thompson1jamesthompson1REDQ2025} \cite{watchernyuWatchernyuREDQ2025} \\
 DroQ and CrossQ & Using SBX which is part of Stable Baselines 3 \cite{stable-baselines3} \\
-
+Sunrise & My own updated copy of the authors implementation \cite{thompson1jamesthompson1Sunrise2025} \cite{leePokaxpokaSunrise2025} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The experiments were run across multiple computers CPUs by using a grid computing facility at the School of Engineering and Computer Science at Victoria University of Wellington. The runners are run on machines which vary from i7-9700 - i7-14700 CPUs. This does effect the accuracy of the wall clock time results. The effect of the different CPU speeds is mitigated as the 10 seeds will be run across avariety of CPU models.
+The experiments were run across multiple computers CPUs by using a grid computing facility at the School of Engineering and Computer Science at Victoria University of Wellington as well as the Raapoi HPC system \cite{RapoiClusterDocumentation}. The timed experiments were all run on Raapoi with CPU only. The CPUs are AMD EPYC Zen 3 models. The effect of the slightly different CPU speeds is mitigated as the 10 seeds will be run across a variety of CPU models.
 
 The code used to run the experiments can be found at: \url{https://github.com/1jamesthompson1/AIML440_code}.
 
@@ -30,8 +30,7 @@ The code used to run the experiments can be found at: \url{https://github.com/1j
 
 The hyper-parameters fro the different algorithms were all taken from the respective authors original implementation. No additional hyperparameter tuning was done.
 
-The first table shows the hyperparameters for the older deep learning algorithms \ref{tab:old_hyperparameters} and the second table shows the hyperparameters for the state of the art deep learning algorithms \ref{tab:sota_hyperparameters}.
-
+The first table shows the hyperparameters for the older deep learning algorithms \ref{tab:old_hyperparameters} and the second table shows the hyperparameters for the state of the art deep learning algorithms \ref{tab:sota_hyperparameters} the last table is for Sunrise and the new algorithm proposed.
 
 \begin{table}[H]
 \centering
@@ -86,6 +85,39 @@ Update-To-Data ratio        & $1$  & \multicolumn{2}{c|}{$20$} & $1$     \\ \mid
 Policy Delay                      & $1$  & \multicolumn{2}{c|}{$20$} & $3$     \\\midrule
 Number of  Critics                & $5$  & $10$ & \multicolumn{2}{|c}{$2$} \\\midrule
 Algorithm Specific     & $\begin{matrix}\text{n quantiles}=25\\\text{dropped quantiles}=2\end{matrix}$& $\begin{matrix}\text{sampled critics}=2\\\text{initial entropy}=0.2\end{matrix}$ & $\begin{matrix}\text{dropout}=0.01\\\text{Layer normilisation}\end{matrix}$ & $\begin{matrix}\text{BatchNorm}=BRN\\\text{Momentum}=0.99\\\text{BRN Warmup}=10^5\end{matrix}$ \\\midrule
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Learning Hyperparameters for Sunrise and DESAC.}
+\label{tab:sota_hyperparameters}
+\begin{tabular}{l|c|c}
+\toprule
+\textbf{Parameter}            &  Sunrise & DESAC\\
+\midrule\midrule
+Discount Factor ($\gamma$)        & \multicolumn{2}{c}{$0.99$}             \\ \midrule
+Learning Rate                     & \multicolumn{2}{c}{$0.0003$}  \\ \midrule
+Replay Buffer Size                & \multicolumn{2}{c}{$10^6$}           \\\midrule
+Batch Size                        & \multicolumn{2}{c}{$256$}               \\\midrule
+Activation Function               & \multicolumn{2}{c}{\texttt{relu}}     \\\midrule
+Critic Width                      & \multicolumn{2}{c}{$256$}  \\\midrule
+Critic Depth                      & \multicolumn{2}{c}{$2$}      \\\midrule
+Actor Width                       & \multicolumn{2}{c}{$256$}   \\\midrule
+Actor Depth                       & \multicolumn{2}{c}{$2$}    \\\midrule
+Target Update Rate ($\tau$)       & \multicolumn{2}{c|}{$0.005$}  \\\midrule
+Adam $\beta_1$                    & \multicolumn{2}{c|}{$0.9$}   \\\midrule
+Learning start delay              & \multicolumn{2}{c}{1000}  \\\midrule
+Update-To-Data ratio              & $1$ & $1$     \\ \midrule
+Policy Delay                      & $1$ & $1$     \\\midrule
+Ensemble start size               & $3$  & ?? \\\midrule
+Actor temperature                 & $0$  & ?? \\\midrule
+Critic temperature                & $0$  & ?? \\\midrule
+Bernoulli mean                    & $0.5$  & ?? \\\midrule
+UCB exploration                   & False & ?? \\\midrule
+Algorithm Specific     & \text{N/A} & ?? \\\midrule
 \bottomrule
 \end{tabular}
 \end{table}

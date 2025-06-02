@@ -1,0 +1,163 @@
+\chapter{Dynamic ensemble of Soft Actor Critics}
+
+Dynamic ensemble of soft actor critic is a algorithm that applies some of the ideas from Sunrise \cite{leeSUNRISESimpleUnified2021} and SAC \cite{haarnojaSoftActorCriticAlgorithms2019} to create a new algorithm that explores quickly and stabilizes in the long run. The DSunrise algorithm is the built off the sunrise algorithm with the addition of a dynamic ensemble. That is on a regular interval (say every 10,000 steps) the ensemble is checked to see if any of the base learners can be removed. On removal of a base learner a new learner will be instantiated and added to the ensemble. Therefore the two important aspects of the DSunrise algorithm is the removal check and the instantiation of new base learners.
+
+\section{Removal Check}
+
+A removal check is a routine that is run on some regular interval (every step, episode, n episodes etc). As there is no managing critic the check only has the current base learners and the historic performance of these base learners to look at. From this information two classes of metrics can be created one is a performance check and the second is a diversity check.
+
+The performance check can either look at historic performance and/or the predicted performance of the base learner. Historic performance involve a type of time weighted average from the last $n$ episodes (which involves each base learner tracking is past performance). Alternatively predicted performance could be used which involves comparing the predicted return for each base learner for a sample of states.
+
+The diversity check is trying to quantify how different the base learners are from each other. As the goal of an ensemble is that the base learners are different from each other removing base learners that happen to be too similar to each other will reduce the computational cost of the ensemble and provide opportunity for new base learners to be added to increase diversity. The diversity of a base learners can be understood by either how similar the critics are or how similar the proposed actions are from the polices. Furthermore as there is a unique optimal policy the ensemble of base learners should converge to this optimal policy and so the size of the ensemble will naturally decrease as training progresses.
+
+In practice a diversity based metric is used to identify pairs of base learners that are too similar to each other. The lower performing base learner is then removed from the ensemble.
+
+
+\begin{align*}
+    \text{performance}_i^{(t)} &= \sum_{\tau=t-n}^{t} \omega_\tau \cdot R_i^{(\tau)} 
+    \quad \text{where} \quad 
+    \omega_\tau = \frac{\gamma^{t-\tau}}{\sum_{k=t-n}^{t} \gamma^{t-k}} \\
+    \text{diversity}_i^{(t)} &= \frac{1}{|\mathcal{S}| \cdot (|\mathcal{E}|-1)} 
+    \min_{\substack{j=1, ..., |\mathcal{E}| \\ j \neq i}} \sum_{s \in \mathcal{S}}  
+    \left| \bm{a}_i(s) - \bm{a}_j(s) \right|_2
+\end{align*}
+
+
+Where:
+\begin{itemize}
+    \item $\text{performance}_i^{(t)}$: Performance metric for learner $i$ at episode $t$
+    \item $\text{diversity}_i^{(t)}$: Diversity metric for learner $i$ at episode $t$
+    \item $R_i^{(\tau)}$: Return of learner $i$ in its $\tau$-th episode 
+    \item $\gamma$: Temporal discount factor ($0.9 \leq \gamma \leq 0.99$)
+    \item $n$: Window size for performance evaluation
+    \item $\mathcal{S}$: State sample from replay buffer ($|\mathcal{S}| = m$)
+    \item $\mathcal{E}$: Current ensemble of learners
+    \item $\bm{a}_i(s)$: Action vector of learner $i$ in state $s$
+\end{itemize}
+
+The removal decision combines both metrics:
+\begin{equation*}
+    \text{remove}_i^{(t)} = 
+    \begin{cases} 
+        1 & \text{if } \exists\, j \neq i \;\text{such that}\; \dfrac{\sum_{s \in \mathcal{S}}  
+    \left| \bm{a}_i(s) - \bm{a}_j(s) \right|_2}{|\mathcal{S}| \cdot (|\mathcal{E}|-1)\mu_D^{(t)}} < d_{\text{thre}} \;\text{and}\; \text{performance}_i^{(t)} < \text{performance}_j^{(t)} \\
+        1 & \text{if } \dfrac{\text{performance}_i^{(t)}}{\mu_P^{(t)}} < p_{\text{crit}} \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation*}
+
+With:
+\begin{itemize}
+    \item $\mu_P^{(t)} = \frac{1}{|\mathcal{E}|} \sum_{k=1}^{|\mathcal{E}|} \text{performance}_k^{(t)}$
+    \item $\mu_D^{(t)} = \frac{1}{|\mathcal{E}|} \sum_{k=1}^{|\mathcal{E}|} \text{diversity}_k^{(t)}$
+    \item $p_{\text{crit}}$: Critical performance threshold ($\approx 0.5$)
+    \item $d_{\text{thre}}$: Diversity threshold ($\approx 0.6$)
+\end{itemize}
+
+
+
+\section{Instantiation of new base learners}
+
+When a base learner is removed from the ensemble a new base learner can be instantiated. There are many different ways to instantiate new models. One way of instantiating a new base learner is to randomly instantiate a new base learner then train it up on some random subset of the replay buffer. This will add variation to it through the random initialization and the random subset of the replay buffer. However depending on the size of the experience subset this could be computationally similar to simply having the base learner as part of the ensemble since the beginning of the training. Another way to instantiate a new base learner is for it to somehow be a variation of a current base learner. This could be done in a variety of ways which can broadly be separated into either cross over (involving multiple base learners) or mutation (involving a single base learner). Once the instantiation of the new base learner is complete it could pass through a removal check to see if it is worth keeping in the ensemble. If it is not worth keeping then the ensemble size will naturally decrease. This naturally decreasing ensemble size is a feature that trends towards a single base learner which is computationally efficient (and potentially the optimal policy, depending on the guarantees of the removal check).
+
+The current method of instantiation involves applying random mutation to the actor network and then training it on a small random subset of the experience replay buffer.
+
+\begin{algorithm}[H]
+\caption{Generate Replay Subset}
+\begin{algorithmic}[1]
+\Require{Replay memory $\mathcal{D}$, Reward threshold $r_{\text{top}}$, Error threshold $e_{\text{top}}$, Random sample ratio $\rho_{\text{random}}$}
+\State Select top $50\%$ transitions by reward:
+\begin{align*}
+    \mathcal{D}_{\text{reward}} &\gets \text{Top } \lfloor 0.5 \cdot |\mathcal{D}| \rfloor \text{ transitions by reward}
+\end{align*}
+\State Select top $30\%$ transitions by error:
+\begin{align*}
+    \mathcal{D}_{\text{error}} &\gets \text{Top } \lfloor 0.3 \cdot |\mathcal{D}| \rfloor \text{ transitions by error}
+\end{align*}
+\State Randomly sample $20\%$ transitions from $\mathcal{D}$:
+\begin{align*}
+    \mathcal{D}_{\text{random}} &\gets \text{Randomly sample } \lfloor 0.2 \cdot |\mathcal{D}| \rfloor \text{ transitions}
+\end{align*}
+\State Combine subsets:
+\begin{align*}
+    \mathcal{D}_{\text{subset}} &\gets \mathcal{D}_{\text{reward}} \cup \mathcal{D}_{\text{error}} \cup \mathcal{D}_{\text{random}}
+\end{align*}
+\State \Return $\mathcal{D}_{\text{subset}}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Instantiate New Base Learner}
+\begin{algorithmic}[1]
+\Require{Replay buffer $\mathcal{D}$, Ensemble $\mathcal{E}$, Mutation noise $\sigma$, Diversity threshold $p_{\text{crit}}$}
+\State Select a random base learner $\text{base} \in \mathcal{E}$
+\State Generate mutation noise $\bm{\delta} \sim \mathcal{N}(0, \sigma^2)$
+\State Instantiate new base learner:
+\begin{align*}
+    \bm{\theta}_{\text{new}} &\gets \bm{\theta}_{\text{base}} + \epsilon \cdot \bm{\delta} \\
+\end{align*}
+\State Call \textbf{Generate Replay Subset} to create training data:
+\begin{align*}
+    \text{replay subset} &\gets \textbf{Generate Replay Subset}(\mathcal{D}, r_{\text{top}}, e_{\text{top}}, \rho_{\text{random}})
+\end{align*}
+\State Train the new base learner on the replay subset
+\If{$\text{diversity}_{\text{new}} < p_{\text{crit}}$}
+    \State Discard new base learner
+\Else
+    \State Add new base learner to ensemble $\mathcal{E}$
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\section{Basic algorithm}
+
+We can put the removal check and the instantiation of new base learners together to create a dynamic ensemble of soft actor critics. The algorithm is based on the Sunrise algorithm \cite{leeSUNRISESimpleUnified2021} with the addition of the dynamic ensemble. The algorithm is outlined in Algorithm \ref{alg:dynamic_sunrise}. A implementation of the algorithm can be found at \url{https://github.com/1jamesthompson1/AIML440_code/tree/main/my-algorithm-implementation/DSUNRISE}.
+
+\begin{algorithm}
+\caption{Dynamic Sunrise Algorithm}
+\label{alg:dynamic_sunrise}
+\begin{algorithmic}[1]
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environment steps $S$, neural network function approximator $Q$, neural network function approximator $\pi$ and initial entropy coefficient $\alpha$, ensemble size E, Bellman weight temperature $T$, Critical performance threshold $p_{\text{crit}}$, Diversity threshold $d_{\text{thre}}$, Critical diversity threshold $d_{\text{crit}}$, max number of removals $r$, removal check frequency $R$, warmup steps $W$}
+\State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
+\For{ $i \in \{1,2,\ldots,E\}$}
+    \State Initialize critic $Q_{\theta_{i,j}}$ with random weights $\theta_{i,j}$ for $j \in \{1,2\}$
+    \State Initialize target critic $\bar{Q}_{\bar{\theta_{i,j}}} \leftarrow Q_{\theta_{i,j}}$ for $j \in \{1,2\}$
+    \State Initialize policy $\pi_{\phi_i}$ with random weights $\phi_i$
+\EndFor
+\Repeat
+    \For{ $S$ steps}
+        \State Collect $E$ action samples $\bm{a}_{t}^{(i)} = \pi_{\phi}(s_{t})$ for $i \in \{1,2,\ldots,E\}$
+        \State select action: $a_{t} \sim \pi_{\phi}(a_{t} | s_{t})$
+        \State // If not using UCB then simply randomly select an actor to complete an entire episode.
+        \State Choose the action that maximizes the UCB exploration term:
+        \State $a_{t} = \arg\max_{a} \left( Q_{\text{mean}}(s_{t}, a) + \alpha \cdot \sigma(Q_{\text{std}}(s_{t}, a)) \right)$
+        \State Observe reward $r_{t}$ and next state $s_{t+1}$
+        \State Sample bootstrap masks $m_{t} = \{m_{t,i} \sim \text{Bernoulli}(0.5) \text{ for } i \in \{1,..., E\}\}$
+        \State Store transition $(s_{t}, a_{t}, r_{t}, s_{t+1}, m_t)$ in $\mathcal{D}$
+    \EndFor
+    \If{Size of $\mathcal{D}$ is less than $W$}
+        \State Continue to next iteration without training of removal checks
+    \EndIf
+    \For{UTD times}
+        \State Sample a batch $B$ of size $K$ from $\mathcal{D}$
+        \For{each agent $i$}
+            \State Use Mask $m_{t,i}$ to select transitions from $B$ for agent $i$
+            \State Update Q-functions to minimize $(\text{sigmoid}(-\bar{Q}_{\text{std}}(s_{t+1}, a_{t+1})*T)+0.5)(Q_{\theta_i}(s_t, a_t)-r_t-\gamma \bar{V}(s_{t+1}))$
+            \State Update policy to minimize $\mathbb{E}_{a_t \sim \pi_\phi}\left[ \alpha \log \pi_\phi (a_t|s_t) - Q_\theta(s_t, a_t)\right]$
+            \State Update entropy coefficient: $\alpha \gets \alpha - \lambda \hat{\nabla}_{\alpha} J(\alpha)$
+            \State Update target Q-networks: $\bar{\theta_{i}} \gets \tau\theta_{i} + (1 - \tau) \bar{\theta_{i}}$ for $i \in \{1,2\}$
+        \EndFor
+    \EndFor
+    \If{the current episode is a multiple of $R$}
+        \State Calculate $\text{remove}_i^{(t)}$ for each base learner $i \in \{1,2,\ldots,E\}$ using the removal check
+        \For{worst $r$ performing base learners}
+            \State Instantiate new base learner using the instantiation algorithm
+            \State Update $T$ to reflect the new ensemble size
+        \EndFor
+    \EndIf
+\Until{stopping criteria is met}
+
+\end{algorithmic}
+\end{algorithm}
+
+Note that this algorithm does not take into account the various extra bits of information that will need to be stored for the proposed removal check and the instantiation of new base learners.
