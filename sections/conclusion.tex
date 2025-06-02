@@ -1,6 +1,6 @@
 \chapter{Conclusions}\label{C:con}
 
-Reinforcement Learning is a powerful framework for learning how to act. The recent combination of addition of deep learning has made reinforcement learning more powerful than ever. In this report I have covered the basics of reinforcement learning and the algorithms that are used to solve the problem. I have also explored some modern and state of the art algorithms which solve continuous control problems. In this exploration I have run some experiments that investigate the difference in sample efficiency and computational efficiency of the algorithms.
+Reinforcement Learning is a powerful framework for learning how to act. The recent combination of addition of deep learning has made reinforcement learning more powerful than ever. In this report I have covered the basics of reinforcement learning and the algorithms that are used to solve the problem. I have also explored some modern and state of the art algorithms which solve continuous control problems and a novel extension to on other algorithms. In this exploration I have run some experiments that investigate the difference in sample efficiency and computational efficiency of the algorithms presented.
 
 There are many ways of splitting the field of reinforcement learning. The binary splits we have looked at are model based and model free, value based and policy based and on policy and off policy. However the different solutions can merge the boundary between these splits. For example actor critic methods are explicitly both value based and policy based. Below is a table which helps summarise the differences between the modern algorithms.
 
@@ -30,21 +30,25 @@ The state of the art deep learning algorithms also having some differences. All 
     \footnotesize
     \centering
     \renewcommand{\arraystretch}{1.4} % Increases row spacing for readability
-    \begin{tabularx}{\textwidth}{X X X X X}
+    \begin{tabularx}{\textwidth}{X | X X X X p{0.35\textwidth}}
         \hline
-        \textbf{Feature} & \textbf{TQC} & \textbf{REDQ} & \textbf{DroQ} & \textbf{CrossQ} \\
+        \textbf{Algorithm} & \textbf{Target networks} & \textbf{UTD $\gg$ 1} & \textbf{Policy delay} & \textbf{No. critics} & \textbf{Special features} \\
         \hline
-        \textbf{Target networks} & \multicolumn{3}{c}{Yes} & No \\
-        \textbf{Number of critics} & 5 & 10 & 2 & 2 \\
-        \textbf{UTD $\gg$ 1} & No & \multicolumn{2}{c}{Yes} & No \\
-        \textbf{Policy delay} & No & \multicolumn{3}{c}{Yes} \\
-        \textbf{Special features} & Truncated distributional critics  & Subset of critic ensemble for critic target, Minimization for Q-target & Dropout layers, minimization for Q-target & Layer normalisation \\
+        \textbf{TQC}     & Yes & No  & No  & 5 & Truncated distributional critics \\
+        \textbf{REDQ}    & Yes & Yes & Yes & 10 & Subset of critic ensemble for critic target, Minimization for Q-target \\
+        \textbf{DroQ}    & Yes & Yes & Yes & 2 & Dropout layers, Minimization for Q-target \\
+        \textbf{CrossQ}  & No  & No  & Yes & 2 & Layer normalization \\
+        \textbf{Sunrise} & Yes & No  & Yes & 6 & Ensemble-based exploration \\
+        \textbf{DSunrise} & Yes & No  & Yes & Dynamic (start 20) & Dynamic ensemble with removal and instantiation of new actors \\
         \hline
     \end{tabularx}
-    \caption{Differences between state of the art reinforcement learning algorithms.}
+    \caption{Differences between state-of-the-art reinforcement learning algorithms.}
 \end{table}
 
 These algorithms represent some of the best performing algorithms in the field that excel in either their sample efficiency, computational efficiency or stability.
+
+Dsunrise represents a new algorithm that takes a stable algorithm and extends it to ...
+
 
 There is unknown potential in the applicability of current algorithms as well as unknown power in new algorithms. Some of the current limitations of the algorithms are the sample efficiency and the stability of the algorithms. Furthermore there is the larger problem of generalization, which is getting an agent to act intelligently on varied environments that it has never seen before with minimal to no new training.
 

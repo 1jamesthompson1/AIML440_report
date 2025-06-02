@@ -117,7 +117,7 @@ We can put the removal check and the instantiation of new base learners together
 \caption{Dynamic Sunrise Algorithm}
 \label{alg:dynamic_sunrise}
 \begin{algorithmic}[1]
-\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environment steps $S$, neural network function approximator $Q$, neural network function approximator $\pi$ and initial entropy coefficient $\alpha$, ensemble size E, Bellman weight temperature $T$, Critical performance threshold $p_{\text{crit}}$, Diversity threshold $d_{\text{thre}}$, Critical diversity threshold $d_{\text{crit}}$, max number of removals $r$, removal check frequency $R$, warmup steps $W$}
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environment steps $S$, neural network function approximator $Q$, neural network function approximator $\pi$, initial entropy coefficient $\alpha$, ensemble size E, Bellman weight temperature $T$, Critical performance threshold $p_{\text{crit}}$, Diversity threshold $d_{\text{thre}}$, Critical diversity threshold $d_{\text{crit}}$, max number of removals $r$, removal check frequency $R$, warmup steps $W$ and removal function $\text{remove}_i^{(t)}$}
 \State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
 \For{ $i \in \{1,2,\ldots,E\}$}
     \State Initialize critic $Q_{\theta_{i,j}}$ with random weights $\theta_{i,j}$ for $j \in \{1,2\}$

@@ -524,12 +524,13 @@ Put togather the algorithm for Sunrise is as follows.
 \begin{algorithm}[H]
 \caption{Sunrise Algorithm}
 \begin{algorithmic}[1]
-\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environment steps $S$, neural network function approximator $Q$, neural network function approximator $\pi$ and initial entropy coefficient $\alpha$, ensemble size $E$, Bellman weight temperature $T$}
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environment steps $S$, neural network function approximator $Q$, neural network function approximator $\pi$, initial entropy coefficient $\alpha$, warmup steps $W$, ensemble size $E$ and Bellman weight temperature $T$}
 \State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
-\State Initialize policy $\pi_{\phi}$ with random weights $\phi$
-\State Initialize both action-value function $Q_{\theta_i}$ with random weights 
-$\theta_i$
-\State Initialize $\bar{\theta}_{i} \leftarrow \theta_{i}$ for $i \in \{1,2\}$
+\For{ $i \in \{1,2,\ldots,E\}$}
+    \State Initialize critic $Q_{\theta_{i,j}}$ with random weights $\theta_{i,j}$ for $j \in \{1,2\}$
+    \State Initialize target critic $\bar{Q}_{\bar{\theta_{i,j}}} \leftarrow Q_{\theta_{i,j}}$ for $j \in \{1,2\}$
+    \State Initialize policy $\pi_{\phi_i}$ with random weights $\phi_i$
+\EndFor
 \Repeat
     \For{ $S$ steps}
         \State // UCB exploration alternatively randomly select a base learner to be used for each episode.
@@ -541,7 +542,7 @@ $\theta_i$
         \State Sample bootstrap masks $m_{t} = \{m_{t,i} \sim \text{Bernoulli}(0.5) \text{ for } i \in \{1,..., E\}\}$
         \State Store transition $(s_{t}, a_{t}, r_{t}, s_{t+1}, m_t)$ in $\mathcal{D}$
     \EndFor
-    \If{Size of $\mathcal{D}$ is less than 10,000}
+    \If{Size of $\mathcal{D}$ is less than $W$}
         \State Continue to next iteration without training of removal checks
     \EndIf
     \For{UTD times}

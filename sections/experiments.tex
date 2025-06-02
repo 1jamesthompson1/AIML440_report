@@ -47,8 +47,8 @@ The measure of computational efficiency is about measuring the amount of computa
 
 All of experiments were run on similar CPU only machines. See the appendix \ref{C:appendixA} for more information. The goal of graph is not to look at absolute time (however that is interesting to know) it is about the comparing the difference between algorithms given the same hardware.
 
-It is quite clear here that the ensemble methods have much higher computational cost taking about 4 times longer to complete than TQC.
+It is interesting to note that the most modern algorithms redq and crossq are the longest running in terms of wall clock time. More importantly we can see that the method of redq having alot of critics is computationally expensive and results in a wall clock time almost 4 times that of sunrise which is also a modern ensemble method.
 
-Looking at the horizontal lines can give us a rough idea of whether we are learning in realtime, faster than realtime or slower than realtime. We can see that for a more complicated task like HumanoidStandup we are learning significantly slower than realtime. Whereas for simpler environments like Ant the agent is learning about 3 times faster than realtime.
+Looking at the horizontal lines can give us a rough idea of whether we are learning in realtime, faster than realtime or slower than realtime. We can see that for a more complicated task like HumanoidStandup we are learning significantly slower than realtime. Whereas the simpler environments are not so drastically slower than realtime. Given the hyperparameters are the same for all environments the only difference in environments is the action and state dimension as well as simulation time. Deeper analysis would have to be done to detangled the affect of simulation time and the action/state dimension in the wall clock time.
 
 \dots
