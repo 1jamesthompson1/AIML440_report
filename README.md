@@ -5,3 +5,5 @@ The project has a time commitment of one course which is the equivalent of 1/4 o
 My project is being completed under the supervision of [Dr Aaron Chen](https://people.wgtn.ac.nz/aaron.chen). The project is split up into three parts. Firstly I will complete a review of the RL landscape. Then I will move onto evaluating some of the current baseline algorithms. Lastly will be me applying my ideas to try and augment and improve some of the existing algorithms. This last section is about half of the project and I expect to know more about what will do closer to the time.
 
 More information on the project plan can be found in this [PDF](AIML440_outline.pdf).
+
+See the appendix section of the [report](output/JamesThompsonAIML440Report.pdf) for a more detailed breakdown of the project source code.

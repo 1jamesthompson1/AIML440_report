@@ -2,7 +2,7 @@
 
 \section{Experiment details}
 
-All of the experiements were run using the same gymnasium version 1.1.1 using all of the version 5 environments. The environments were run using the default Mujoco settings. The source code for the different algorithms can be seen in the table below:
+All of the experiments were run using the same gymnasium version 1.1.1 using all of the version 5 environments. The environments were run using the default Mujoco settings. The source code for the different algorithms can be seen in the table below:
 
 \begin{table}[H]
 \centering
@@ -18,13 +18,14 @@ TQC & My own updated copy of the authors implementation \cite{thompson1jamesthom
 REDQ & My own copy of the authors implementation \cite{thompson1jamesthompson1REDQ2025} \cite{watchernyuWatchernyuREDQ2025} \\
 DroQ and CrossQ & Using SBX which is part of Stable Baselines 3 \cite{stable-baselines3} \\
 Sunrise & My own updated copy of the authors implementation \cite{thompson1jamesthompson1Sunrise2025} \cite{leePokaxpokaSunrise2025} \\
+DSunrise & My own implementation of the algorithm built off Sunrise code. \cite{thompson1jamesthompson1Sunrise2025} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The experiments were run across multiple computers CPUs by using a grid computing facility at the School of Engineering and Computer Science at Victoria University of Wellington as well as the Raapoi HPC system \cite{RapoiClusterDocumentation}. The timed experiments were all run on Raapoi with CPU only. The CPUs are AMD EPYC Zen 3 models. The effect of the slightly different CPU speeds is mitigated as the 10 seeds will be run across a variety of CPU models.
 
-The code used to run the experiments can be found at: \url{https://github.com/1jamesthompson1/AIML440_code}.
+The code used to run the experiments can be found at: \url{https://github.com/1jamesthompson1/AIML440_code}. With further discussion of source code in section \ref{sec:new_algorithm_source_code}.
 
 \section{Experiment hyper-parameters}
 
@@ -92,11 +93,11 @@ Algorithm Specific     & $\begin{matrix}\text{n quantiles}=25\\\text{dropped qua
 \begin{table}[H]
 \centering
 \footnotesize
-\caption{Learning Hyperparameters for Sunrise and DESAC.}
+\caption{Learning Hyperparameters for Sunrise and DSunrise.}
 \label{tab:sota_hyperparameters}
 \begin{tabular}{l|c|c}
 \toprule
-\textbf{Parameter}            &  Sunrise & DESAC\\
+\textbf{Parameter}            &  Sunrise & DSunrise\\
 \midrule\midrule
 Discount Factor ($\gamma$)        & \multicolumn{2}{c}{$0.99$}             \\ \midrule
 Learning Rate                     & \multicolumn{2}{c}{$0.0003$}  \\ \midrule
@@ -107,17 +108,35 @@ Critic Width                      & \multicolumn{2}{c}{$256$}  \\\midrule
 Critic Depth                      & \multicolumn{2}{c}{$2$}      \\\midrule
 Actor Width                       & \multicolumn{2}{c}{$256$}   \\\midrule
 Actor Depth                       & \multicolumn{2}{c}{$2$}    \\\midrule
-Target Update Rate ($\tau$)       & \multicolumn{2}{c|}{$0.005$}  \\\midrule
-Adam $\beta_1$                    & \multicolumn{2}{c|}{$0.9$}   \\\midrule
-Learning start delay              & \multicolumn{2}{c}{1000}  \\\midrule
+Target Update Rate ($\tau$)       & \multicolumn{2}{c}{$0.005$}  \\\midrule
+Adam $\beta_1$                    & \multicolumn{2}{c}{$0.9$}   \\\midrule
+Learning start delay              & $1000$ & $10000$  \\\midrule
 Update-To-Data ratio              & $1$ & $1$     \\ \midrule
 Policy Delay                      & $1$ & $1$     \\\midrule
-Ensemble start size               & $3$  & ?? \\\midrule
-Actor temperature                 & $0$  & ?? \\\midrule
-Critic temperature                & $0$  & ?? \\\midrule
-Bernoulli mean                    & $0.5$  & ?? \\\midrule
-UCB exploration                   & False & ?? \\\midrule
-Algorithm Specific     & \text{N/A} & ?? \\\midrule
+Ensemble start size               & $3$  & $10$ \\\midrule
+Actor temperature                 & $0$  & $0$ \\\midrule
+Critic temperature                & $20$  & $20$ \\\midrule
+Bernoulli mean                    & $0.5$  & $0.5$ \\\midrule
+UCB exploration                   & True & True \\\midrule
+Algorithm Specific     & \text{N/A} & $\begin{matrix}\text{diversity\_threshold}=0.2\\\text{diversity\_critical\_threshold}=0.1\\\text{performance\_gamma}=0.99\\\text{window\_size}=1000\\\text{noise}=0.1\\\text{retrain\_steps}=0\\\text{removal\_check\_frequency}=10,000\\\text{removal\_check\_buffer\_size}=10,000\end{matrix}$ \\\midrule
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Source code}
+\label{sec:new_algorithm_source_code}
+
+This project involved a non-trivial amount of code to conduct the various baseline experiments and to implement the new algorithm. As mentioned in the experiments appendix for a few of the modern algorithms I used my own fork which was used to update the original code to work with the latest version of gymnasium and MuJoCo. These forks will be omitted from this discussion due to their triviality. The only code that is discussed here is the code that was used to run the experiments and the code that was used to implement the new algorithm DSunrise.
+\subsection{Experiment code}
+The experiment code is available at \url{https://github.com/1jamesthompson1/AIML440_code}. This repository has two sections that may be of interest. 
+
+Firstly is the \texttt{running-baseline-experiments} directory. This contains the bash and python scripts that were used to run all but the DSunrise experiments. The scripts are designed to be run on a grid computing system. Particularly run as inner scripts to a \texttt{slurm.sl} script that is called by a batch job. The scripts are then called by \texttt{slurm.sl} and passed the \texttt{SLURM\_ARRAY\_TASK} and extra parameters. The \texttt{slurm.sl} script also defines the OUTPUTDIR which is where the results of the experiments are saved. There is also a \texttt{results.ipynb} notebook that is used to process the results of the experiments and generate the figures in the report. \textit{These submission scripts and results notebooks are not designed to be used by anyone else and are specific to my experiment and cluster setup. However I believe they would still be of interest to anyone wanting somewhere to start.}
+
+Secondly is the \texttt{my-algorithm-implementation} directory. None of the implementations in these directories were finished as each ran into enough roadblocks to prevent completion.
+
+The \texttt{snac} directory contains the implementation of the Soft n Actor Critic algorithm. The \texttt{SNAC} algorithm was a novel algorithm that was designed to extend the SAC algorithm to use an ensemble of actors. The algorithm never reached a point of learning that was on par with some of the other modern algorithms. Therefore it was shelved in favour of other ideas that involved adapting SUNRISE. A write up to introduce the algorithm can be found here \href{https://github.com/1jamesthompson1/AIML440_report/blob/0e27a47f8df93954e2c0a70a535f7041ccb857df/my-algorithm-ideas/output/SnAC.pdf}{SnAC.pdf}.
+
+The \texttt{SUNRISE} and \texttt{DSUNRISE} directory. Given the original authors implementation of SUNRISE was implemented with type coupling to an very outdated version of the RLkit library I wanted to re-implement the algorithm in a standalone way. The result of the attempt can be found in the \texttt{SUNRISE} directory. The implementation is close to working but there is a bug in the code that prevents it from learning after a few thousand steps (i.e it just plateaus at just above random actions). After weeks of bug searching and fixing I decided to shelve the implementation and instead use the original authors implementation of SUNRISE.
+
+\subsection{DSunrise code}
+The code for my DSunrise implementation is found at \url{https://github.com/1jamesthompson1/dsunrise}. The code started off as a fork of the original SUNRISE implementation but has since diverged and added in a new algorithm. Due to the nature of the implementation changes to the code base are spread across many files. However the two most important files are the \href{https://github.com/1jamesthompson1/dsunrise/blob/9d3b6fd8cb65dabcea6cbca64bfc4e84f7c89b80/OpenAIGym_SAC/examples/dsunrise.py}{dsunrise.py} file and the \href{https://github.com/1jamesthompson1/dsunrise/blob/9d3b6fd8cb65dabcea6cbca64bfc4e84f7c89b80/OpenAIGym_SAC/examples/sunrise\_ensemble.py}{sunrise\_ensemble.py} file. The \texttt{dsunrise.py} file is the entry point for the DSunrise algorithm and from there calls all relevant parts of the algorithm. The \texttt{readme} file in the repository contains instructions on how to run the algorithm and how to use the code.

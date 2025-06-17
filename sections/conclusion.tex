@@ -1,8 +1,43 @@
 \chapter{Conclusions}\label{C:con}
 
-Reinforcement Learning is a powerful framework for learning how to act. The recent combination of addition of deep learning has made reinforcement learning more powerful than ever. In this report I have covered the basics of reinforcement learning and the algorithms that are used to solve the problem. I have also explored some modern and state of the art algorithms which solve continuous control problems and a novel extension to on other algorithms. In this exploration I have run some experiments that investigate the difference in sample efficiency and computational efficiency of the algorithms presented.
+\section{Further work}
 
-There are many ways of splitting the field of reinforcement learning. The binary splits we have looked at are model based and model free, value based and policy based and on policy and off policy. However the different solutions can merge the boundary between these splits. For example actor critic methods are explicitly both value based and policy based. Below is a table which helps summarise the differences between the modern algorithms.
+Finite time and resources have limited the scope of this report. There are many areas that could be explored further. I will outline some of the areas that I would have liked to explore further and would have done so if I had more time. Most of these are related to the new algorithm proposed in this report.
+
+\subsection{Hyperparameter tuning}
+There are new hyper-parameters that are introduced in the new algorithm. Given limited time minimal exploration of these hyper-parameters was done once the algorithm was working reasonably well. It is plausible that tweaking and tuning these hyper-parameters could lead to notable improvement in the performance of the algorithm. The hyper-parameters are introduced in \ref{sec:hyperparameters}. I believe of most interest is exploring the trade off between regular replacement and mutation of these ensemble learners with the stability of the algorithm.
+
+\subsection{Explore the effect of retraining the newly instantiated actors}
+When the actor is slated for removal it is mutated and then checked for its diversity from the other actors. Retraining the actor before it is added back to the ensemble could lead to better performance and "targeted exploration". Specifically a subset of the replay buffer that is made up of high reward transitions, high error transitions and random transitions.
+
+\subsection{Add in the ability to add in new actors}
+Once a mutated actor is too close to the other actors it is removed from the ensemble. Meaning it triggers the shrinking of the ensemble. It is plausible that instead of removing the actors we could add in completely new actors that are warmed up on the most recent high error transitions. This would allow the ensemble to grow and explore areas that it is struggling with. Furthermore it would add potential for the ensemble to work in a continual learning environment where concept drift is a problem.
+
+\subsection{Diversity in the objective}
+adding a diversity-promoting term to the policy objective. For example, if you have $N$ policies $\{\pi_{\phi_i}\}_{i=1}^N$, you can encourage diversity by penalizing similarity between policies. One common approach is to add a term based on the Kullback-Leibler (KL) divergence between the current policy and the other ensemble members:
+
+\[
+\text{Diversity term:} \quad \lambda \sum_{j \neq i} D_{\mathrm{KL}}\left(\pi_{\phi_i}(\cdot|s_t) \,\|\, \pi_{\phi_j}(\cdot|s_t)\right)
+\]
+
+So the updated policy objective for each policy $\pi_{\phi_i}$ becomes:
+
+\[
+\mathbb{E}_{a_t \sim \pi_{\phi_i}}\left[ \alpha \log \pi_{\phi_i} (a_t|s_t) - Q_\theta(s_t, a_t) \right]
++ \lambda \sum_{j \neq i} D_{\mathrm{KL}}\left(\pi_{\phi_i}(\cdot|s_t) \,\|\, \pi_{\phi_j}(\cdot|s_t)\right)
+\]
+
+where $\lambda$ controls the strength of the diversity regularization.
+
+\subsection{Different evaluation \texttt{get\_action} method}
+The current method to get an action from the ensemble during evaluation is to take the mean of the actions from the ensemble. This is a simple and effective method and is used in Sunrise. However it is plausible that a more sophisticated method could be used to get the actions from the ensemble. Firstly could be a weighted sum that would weight the actions based on the performance of the actor (either historic or from critics).
+
+\subsection{Computational efficiency}
+A drawback of DSunrise and any ensemble based method is the computational efficiency. Modern algorithms like CrossQ \cite{bhattCrossQBatchNormalization2024} use layer normalization to reduce the computational cost of the algorithm and speed up wall clock time. It is plausible that DSunrise could be made more computationally efficient by using a more efficient base learner like CrossQ.
+
+\section{Different algorithms}
+
+There are many ways of splitting the field of reinforcement learning. The binary splits we have looked at are model based and model free, value based and policy based and on policy and off policy. However the different solutions can merge the boundary between these splits. For example actor critic methods are explicitly both value based and policy based. Below is a table which helps summarize the differences between the modern algorithms.
 
 \begin{table}[h]
     \footnotesize
@@ -22,6 +57,7 @@ There are many ways of splitting the field of reinforcement learning. The binary
     \end{tabularx}
     \caption{Differences between modern deep reinforcement learning algorithms.}
 \end{table}
+
 These models at their time of release were all considered state of the art for model free algorithms but due to the fast moving field are now transitioning to more foundational model which the latest algorithms are building on. These new algorithms increase not just the sample efficiency but also the asymptotic performance of the algorithms. In making these gains the newer algorithms might sacrifice some computational efficiency or stability.
 
 The state of the art deep learning algorithms also having some differences. All of the algorithms that we have looked at however are all Actor Critic based method so all are Off policy, stochastic and use entropy maximization as the exploration strategy. There are still important differences between the algorithms as seen below.
@@ -38,18 +74,18 @@ The state of the art deep learning algorithms also having some differences. All 
         \textbf{REDQ}    & Yes & Yes & Yes & 10 & Subset of critic ensemble for critic target, Minimization for Q-target \\
         \textbf{DroQ}    & Yes & Yes & Yes & 2 & Dropout layers, Minimization for Q-target \\
         \textbf{CrossQ}  & No  & No  & Yes & 2 & Layer normalization \\
-        \textbf{Sunrise} & Yes & No  & Yes & 6 & Ensemble-based exploration \\
-        \textbf{DSunrise} & Yes & No  & Yes & Dynamic (start 20) & Dynamic ensemble with removal and instantiation of new actors \\
+        \textbf{Sunrise} & Yes & No  & No & 3 & Ensemble-based exploration \\
+        \textbf{DSunrise} (My algorithm) & Yes & No  & No & Dynamic (start ~10) & Dynamic ensemble with removal and instantiation of new actors \\
         \hline
     \end{tabularx}
     \caption{Differences between state-of-the-art reinforcement learning algorithms.}
 \end{table}
 
-These algorithms represent some of the best performing algorithms in the field that excel in either their sample efficiency, computational efficiency or stability.
 
-Dsunrise represents a new algorithm that takes a stable algorithm and extends it to ...
+\section{Conclusion}
 
+Reinforcement Learning is a powerful framework for learning how to act. The recent combination of addition of deep learning has made reinforcement learning more powerful than ever. In this report I have covered the basics of reinforcement learning and the algorithms that are used to solve the problem. I have also explored some modern and state of the art algorithms which solve continuous control problems and a novel extension to on other algorithms. In this exploration I have run some experiments that investigate the difference in sample efficiency and computational efficiency of the algorithms presented. Lastly I have proposed a new algorithm that builds on the idea of ensemble learns to make the ensemble inside Sunrise dynamic. This new algorithm, DSunrise is able to maintain the diversity of the ensemble throughout learning which \textit{... Complete the summarization of the algorithm results.}
 
 There is unknown potential in the applicability of current algorithms as well as unknown power in new algorithms. Some of the current limitations of the algorithms are the sample efficiency and the stability of the algorithms. Furthermore there is the larger problem of generalization, which is getting an agent to act intelligently on varied environments that it has never seen before with minimal to no new training.
 
-The field of reinforcement learning is still in its infancy and there is much to be discovered. The combination of deep learning and reinforcement learning has opened up many possibilities and the future is bright and exciting.
+The field of reinforcement learning is still early on and there is much to be discovered. The combination of deep learning and reinforcement learning has opened up many possibilities and the future is bright and exciting.

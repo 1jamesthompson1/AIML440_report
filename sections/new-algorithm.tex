@@ -1,8 +1,9 @@
-\chapter{Dynamic ensemble of Soft Actor Critics}
+\chapter{Dynamic Sunrise Algorithm}
 
-Dynamic ensemble of soft actor critic is a algorithm that applies some of the ideas from Sunrise \cite{leeSUNRISESimpleUnified2021} and SAC \cite{haarnojaSoftActorCriticAlgorithms2019} to create a new algorithm that explores quickly and stabilizes in the long run. The DSunrise algorithm is the built off the sunrise algorithm with the addition of a dynamic ensemble. That is on a regular interval (say every 10,000 steps) the ensemble is checked to see if any of the base learners can be removed. On removal of a base learner a new learner will be instantiated and added to the ensemble. Therefore the two important aspects of the DSunrise algorithm is the removal check and the instantiation of new base learners.
+Dynamic Sunrise is a algorithm that applies some of the ideas from Sunrise \cite{leeSUNRISESimpleUnified2021} and SAC \cite{haarnojaSoftActorCriticAlgorithms2019} to create a new algorithm that increases exploration by using a dynamic ensemble. The DSunrise algorithm is the built off the sunrise algorithm with the addition of a dynamic ensemble. That is on a regular interval (every 10,000 steps) the ensemble is checked to see if any of the base learners can be removed. On removal of a base learner a new learner will be instantiated and added to the ensemble. Therefore the two important aspects of the DSunrise algorithm is the removal check and the instantiation of new base learners.
 
 \section{Removal Check}
+\label{sec:removal_check}
 
 A removal check is a routine that is run on some regular interval (every step, episode, n episodes etc). As there is no managing critic the check only has the current base learners and the historic performance of these base learners to look at. From this information two classes of metrics can be created one is a performance check and the second is a diversity check.
 
@@ -10,16 +11,15 @@ The performance check can either look at historic performance and/or the predict
 
 The diversity check is trying to quantify how different the base learners are from each other. As the goal of an ensemble is that the base learners are different from each other removing base learners that happen to be too similar to each other will reduce the computational cost of the ensemble and provide opportunity for new base learners to be added to increase diversity. The diversity of a base learners can be understood by either how similar the critics are or how similar the proposed actions are from the polices. Furthermore as there is a unique optimal policy the ensemble of base learners should converge to this optimal policy and so the size of the ensemble will naturally decrease as training progresses.
 
-In practice a diversity based metric is used to identify pairs of base learners that are too similar to each other. The lower performing base learner is then removed from the ensemble.
+In practice a diversity based metric is used to identify pairs of base learners that are too similar to each other. The lower performing base learner is then removed from the ensemble. The performance and diversity metrics are defined below.
 
 
 \begin{align*}
     \text{performance}_i^{(t)} &= \sum_{\tau=t-n}^{t} \omega_\tau \cdot R_i^{(\tau)} 
-    \quad \text{where} \quad 
-    \omega_\tau = \frac{\gamma^{t-\tau}}{\sum_{k=t-n}^{t} \gamma^{t-k}} \\
-    \text{diversity}_i^{(t)} &= \frac{1}{|\mathcal{S}| \cdot (|\mathcal{E}|-1)} 
-    \min_{\substack{j=1, ..., |\mathcal{E}| \\ j \neq i}} \sum_{s \in \mathcal{S}}  
-    \left| \bm{a}_i(s) - \bm{a}_j(s) \right|_2
+        \quad \text{where} \quad 
+        \omega_\tau = \frac{\gamma^{t-\tau}}{\sum_{k=t-n}^{t} \gamma^{t-k}} \\
+    \text{diversity}_i^{(t)} &=  \min_{\substack{j=1, ..., |\mathcal{E}| \\ j \neq i}} \frac{\sum_{s \in \mathcal{S}}  
+        \frac{\left| \bm{a}_i(s) - \bm{a}_j(s) \right|_2}{D_{\max}}}{|\mathcal{S}|}
 \end{align*}
 
 
@@ -27,7 +27,8 @@ Where:
 \begin{itemize}
     \item $\text{performance}_i^{(t)}$: Performance metric for learner $i$ at episode $t$
     \item $\text{diversity}_i^{(t)}$: Diversity metric for learner $i$ at episode $t$
-    \item $R_i^{(\tau)}$: Return of learner $i$ in its $\tau$-th episode 
+    \item $D_{\max}$: Maximum l2 distance between actions in the action space
+    \item $R_i^{(\tau)}$: Reward of learner $i$ in its $\tau$-th transition
     \item $\gamma$: Temporal discount factor ($0.9 \leq \gamma \leq 0.99$)
     \item $n$: Window size for performance evaluation
     \item $\mathcal{S}$: State sample from replay buffer ($|\mathcal{S}| = m$)
@@ -35,28 +36,25 @@ Where:
     \item $\bm{a}_i(s)$: Action vector of learner $i$ in state $s$
 \end{itemize}
 
-The removal decision combines both metrics:
+These metrics are used to determine if a base learner should be removed from the ensemble. The removal check is run on a regular interval and will find if there are any base learners that are too similar to each other and if so remove the base learner that is performing worse. This is because diversity measure is symmetric so similar base learners will always be found in pairs. The removal check is defined as follows:
+
 \begin{equation*}
     \text{remove}_i^{(t)} = 
     \begin{cases} 
-        1 & \text{if } \exists\, j \neq i \;\text{such that}\; \dfrac{\sum_{s \in \mathcal{S}}  
-    \left| \bm{a}_i(s) - \bm{a}_j(s) \right|_2}{|\mathcal{S}| \cdot (|\mathcal{E}|-1)\mu_D^{(t)}} < d_{\text{thre}} \;\text{and}\; \text{performance}_i^{(t)} < \text{performance}_j^{(t)} \\
-        1 & \text{if } \dfrac{\text{performance}_i^{(t)}}{\mu_P^{(t)}} < p_{\text{crit}} \\
+        1 & \text{if } \exists\, j \neq i \;\text{such that}\; \text{diversity}_i^{(t)} < d_{\text{thre}} \;\text{and}\; \text{performance}_i^{(t)} < \text{performance}_j^{(t)} \\
         0 & \text{otherwise}
     \end{cases}
 \end{equation*}
 
 With:
 \begin{itemize}
-    \item $\mu_P^{(t)} = \frac{1}{|\mathcal{E}|} \sum_{k=1}^{|\mathcal{E}|} \text{performance}_k^{(t)}$
-    \item $\mu_D^{(t)} = \frac{1}{|\mathcal{E}|} \sum_{k=1}^{|\mathcal{E}|} \text{diversity}_k^{(t)}$
-    \item $p_{\text{crit}}$: Critical performance threshold ($\approx 0.5$)
     \item $d_{\text{thre}}$: Diversity threshold ($\approx 0.6$)
 \end{itemize}
 
 
 
 \section{Instantiation of new base learners}
+\label{sec:instantiation}
 
 When a base learner is removed from the ensemble a new base learner can be instantiated. There are many different ways to instantiate new models. One way of instantiating a new base learner is to randomly instantiate a new base learner then train it up on some random subset of the replay buffer. This will add variation to it through the random initialization and the random subset of the replay buffer. However depending on the size of the experience subset this could be computationally similar to simply having the base learner as part of the ensemble since the beginning of the training. Another way to instantiate a new base learner is for it to somehow be a variation of a current base learner. This could be done in a variety of ways which can broadly be separated into either cross over (involving multiple base learners) or mutation (involving a single base learner). Once the instantiation of the new base learner is complete it could pass through a removal check to see if it is worth keeping in the ensemble. If it is not worth keeping then the ensemble size will naturally decrease. This naturally decreasing ensemble size is a feature that trends towards a single base learner which is computationally efficient (and potentially the optimal policy, depending on the guarantees of the removal check).
 
@@ -65,18 +63,18 @@ The current method of instantiation involves applying random mutation to the act
 \begin{algorithm}[H]
 \caption{Generate Replay Subset}
 \begin{algorithmic}[1]
-\Require{Replay memory $\mathcal{D}$, Reward threshold $r_{\text{top}}$, Error threshold $e_{\text{top}}$, Random sample ratio $\rho_{\text{random}}$}
-\State Select top $50\%$ transitions by reward:
+\Require{Replay memory $\mathcal{D}$, subset size $m$, Reward ratio $r_{\text{top}}$, Error ratio $r_{\text{error}}$, Random sample ratio $r_{\text{random}}$}
+\State Select top transitions by reward:
 \begin{align*}
-    \mathcal{D}_{\text{reward}} &\gets \text{Top } \lfloor 0.5 \cdot |\mathcal{D}| \rfloor \text{ transitions by reward}
+    \mathcal{D}_{\text{reward}} &\gets \text{Top } \lfloor r_{\text{top}} \cdot m \rfloor \text{ transitions by reward}
 \end{align*}
-\State Select top $30\%$ transitions by error:
+\State Select top transitions by error:
 \begin{align*}
-    \mathcal{D}_{\text{error}} &\gets \text{Top } \lfloor 0.3 \cdot |\mathcal{D}| \rfloor \text{ transitions by error}
+    \mathcal{D}_{\text{error}} &\gets \text{Top } \lfloor r_{\text{error}} \cdot m \rfloor \text{ transitions by error}
 \end{align*}
-\State Randomly sample $20\%$ transitions from $\mathcal{D}$:
+\State Randomly sample transitions from $\mathcal{D}$:
 \begin{align*}
-    \mathcal{D}_{\text{random}} &\gets \text{Randomly sample } \lfloor 0.2 \cdot |\mathcal{D}| \rfloor \text{ transitions}
+    \mathcal{D}_{\text{random}} &\gets \text{Randomly sample } \lfloor r_{\text{random}} \cdot m \rfloor \text{ transitions}
 \end{align*}
 \State Combine subsets:
 \begin{align*}
@@ -86,11 +84,13 @@ The current method of instantiation involves applying random mutation to the act
 \end{algorithmic}
 \end{algorithm}
 
+\textit{Note that in the current implementation the replay subset is simply a random subset of the replay buffer. This was done due to time constraints.}
+
+
 \begin{algorithm}[H]
 \caption{Instantiate New Base Learner}
 \begin{algorithmic}[1]
-\Require{Replay buffer $\mathcal{D}$, Ensemble $\mathcal{E}$, Mutation noise $\sigma$, Diversity threshold $p_{\text{crit}}$}
-\State Select a random base learner $\text{base} \in \mathcal{E}$
+\Require{Replay buffer $\mathcal{D}$, Ensemble $\mathcal{E}$, Mutation noise $\sigma$, Diversity threshold $p_{\text{crit}}$, Base learner $\bm{\theta}_{\text{base}}$, Retrain steps $R$}
 \State Generate mutation noise $\bm{\delta} \sim \mathcal{N}(0, \sigma^2)$
 \State Instantiate new base learner:
 \begin{align*}
@@ -98,9 +98,12 @@ The current method of instantiation involves applying random mutation to the act
 \end{align*}
 \State Call \textbf{Generate Replay Subset} to create training data:
 \begin{align*}
-    \text{replay subset} &\gets \textbf{Generate Replay Subset}(\mathcal{D}, r_{\text{top}}, e_{\text{top}}, \rho_{\text{random}})
+    \text{replay subset} &\gets \textbf{Generate Replay Subset}(\mathcal{D}, m, r_{\text{top}}, r_{\text{error}}, r_{\text{random}})
 \end{align*}
-\State Train the new base learner on the replay subset
+\For{retraining steps $R$}
+    \State Sample a batch $B$ from the replay subset
+    \State Train new base learner with batch $B$ \Comment{Using same train function as regular base learner training}
+\EndFor
 \If{$\text{diversity}_{\text{new}} < p_{\text{crit}}$}
     \State Discard new base learner
 \Else
@@ -111,13 +114,13 @@ The current method of instantiation involves applying random mutation to the act
 
 \section{Basic algorithm}
 
-We can put the removal check and the instantiation of new base learners together to create a dynamic ensemble of soft actor critics. The algorithm is based on the Sunrise algorithm \cite{leeSUNRISESimpleUnified2021} with the addition of the dynamic ensemble. The algorithm is outlined in Algorithm \ref{alg:dynamic_sunrise}. A implementation of the algorithm can be found at \url{https://github.com/1jamesthompson1/AIML440_code/tree/main/my-algorithm-implementation/DSUNRISE}.
+We can put the removal check and the instantiation of new base learners together to create a dynamic ensemble of soft actor critics. The algorithm is based on the Sunrise algorithm \cite{leeSUNRISESimpleUnified2021} with the addition of the dynamic ensemble. The algorithm is outlined in Algorithm \ref{alg:dynamic_sunrise}. A implementation of the algorithm can be found at \url{https://github.com/1jamesthompson1/sunrise} and further discussion on the code can be found in the appendix \ref{sec:new_algorithm_source_code}.
 
 \begin{algorithm}
 \caption{Dynamic Sunrise Algorithm}
 \label{alg:dynamic_sunrise}
 \begin{algorithmic}[1]
-\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environment steps $S$, neural network function approximator $Q$, neural network function approximator $\pi$, initial entropy coefficient $\alpha$, ensemble size E, Bellman weight temperature $T$, Critical performance threshold $p_{\text{crit}}$, Diversity threshold $d_{\text{thre}}$, Critical diversity threshold $d_{\text{crit}}$, max number of removals $r$, removal check frequency $R$, warmup steps $W$ and removal function $\text{remove}_i^{(t)}$}
+\Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environment steps $S$, neural network function approximator $Q$, neural network function approximator $\pi$, initial entropy coefficient $\alpha$, ensemble size E, Bellman weight temperature $T$, Diversity threshold $d_{\text{thre}}$, Critical diversity threshold $d_{\text{crit}}$, max number of removals $r$, removal check frequency $R$, warmup steps $W$, removal function $\text{remove}_i^{(t)}$, instantiation function $\text{instantiate}_i$}
 \State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$
 \For{ $i \in \{1,2,\ldots,E\}$}
     \State Initialize critic $Q_{\theta_{i,j}}$ with random weights $\theta_{i,j}$ for $j \in \{1,2\}$
@@ -128,7 +131,6 @@ We can put the removal check and the instantiation of new base learners together
     \For{ $S$ steps}
         \State Collect $E$ action samples $\bm{a}_{t}^{(i)} = \pi_{\phi}(s_{t})$ for $i \in \{1,2,\ldots,E\}$
         \State select action: $a_{t} \sim \pi_{\phi}(a_{t} | s_{t})$
-        \State // If not using UCB then simply randomly select an actor to complete an entire episode.
         \State Choose the action that maximizes the UCB exploration term:
         \State $a_{t} = \arg\max_{a} \left( Q_{\text{mean}}(s_{t}, a) + \alpha \cdot \sigma(Q_{\text{std}}(s_{t}, a)) \right)$
         \State Observe reward $r_{t}$ and next state $s_{t+1}$
@@ -150,14 +152,29 @@ We can put the removal check and the instantiation of new base learners together
     \EndFor
     \If{the current episode is a multiple of $R$}
         \State Calculate $\text{remove}_i^{(t)}$ for each base learner $i \in \{1,2,\ldots,E\}$ using the removal check
-        \For{worst $r$ performing base learners}
-            \State Instantiate new base learner using the instantiation algorithm
-            \State Update $T$ to reflect the new ensemble size
+        \For{Lowest $r$ base learners $i$ such that $\text{remove}_i^{(t)} = 1$}
+            \State Call $\text{instantiate}_i$ and see if the base learner $i$ can be replaced with a sufficiently diverse new base learner, otherwise remove it from the ensemble.
         \EndFor
+        \State Update $T$ to reflect the new ensemble size (if the new base learner was not diverse enough and removed)
     \EndIf
 \Until{stopping criteria is met}
 
 \end{algorithmic}
 \end{algorithm}
 
-Note that this algorithm does not take into account the various extra bits of information that will need to be stored for the proposed removal check and the instantiation of new base learners.
+The structure of the algorithm is the same as the Sunrise algorithm \ref{alg:SUNRISE}. The only difference is that the algorithm has a removal check and instantiation of new base learners. Note that this algorithm does not take into account the various extra bits of information that will need to be stored for the proposed removal check and the instantiation of new base learners.
+
+\section{Hyper-parameters}
+\label{sec:hyperparameters}
+
+This algorithm adds various new hyper-parameters compared to the Sunrise algorithm. These new hyper-parameters include functions which will each have their own hyper-parameters discussed below.
+
+\begin{itemize}
+    \item \textbf{Warmup steps}: The number of steps before the algorithm starts training and performing removal checks.
+    \item \textbf{Removal check frequency}: The number of steps between each removal check. If the removal check is aggressive in mutating/removing base learners then this should be set to a low value. However if it is not aggressive then it can be a higher value.
+    \item \textbf{Max number of removals}: The maximum number of base learners that can be removed in a single removal check. This is too prevent the ensemble from shrinking too quickly. However if a way of adding new base learners is found then this can be increased and/or the ensemble size is greatly increased (>100) then this could be set to a higher value.
+    \item \textbf{Removal check function}: This function flags which base learners should be removed from the ensemble. The function will take the current ensemble and use performance and diversity metrics to determine which base learners should be removed. The current implementation uses a diversity metric based on euclidean distance and l2 norm.
+    \item \textbf{Instantiation function}: This function is responsible for taking a flagged for removal base learner and attempting to instantiate a new base learner. This function can be as simple or complex as desired. The current implementation is a simple mutation of the actor network and training on a small random subset of the replay buffer. If the new base learner is not diverse enough (due to convergence to the optimal policy) then it will be removed from the ensemble. This is done to produce a smaller ensemble as training progresses.
+\end{itemize}
+
+Both the the removal check function and instantiation function can be heavily modified to create very different algorithms. I will expand and list the hyper-parameters for the removal check and instantiation functions that were proposed in \ref{sec:instantiation} and \ref{sec:removal_check}. The first two functions are the $\text{performance}_i^{(t)}$ and $\text{diversity}_i^{(t)}$ functions which are used in the removal check function. The $\text{performance}_i^{(t)}$ function has both the discount factor $\gamma$ and the window size $n$ as hyper-parameters. The $\text{diversity}_i^{(t)}$ has no hyper-parameters, yet measuring distance and diversity can be done in many different ways and so it is a hyper-parameter in itself. The removal check function has the diversity threshold $d_{\text{thre}}$ as a hyper-parameter. The instantiation function has the mutation noise $\sigma$, the diversity threshold $d_{\text{crit}}$ and the retraining steps $R$ as hyper-parameters. The retraining steps is the number of steps that the new base learner is trained for before being added to the ensemble.

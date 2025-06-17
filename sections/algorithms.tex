@@ -523,6 +523,7 @@ Put togather the algorithm for Sunrise is as follows.
 
 \begin{algorithm}[H]
 \caption{Sunrise Algorithm}
+\label{alg:SUNRISE}
 \begin{algorithmic}[1]
 \Require{Replay buffer size $N$, Minibatch size $K$, discount factor $\gamma$, learning rates $\lambda$, $\lambda_{\pi}$ and $\lambda_{Q}$, update frequency $C$, target smoothing coefficient $\tau$, Updates to Data ratio UTD, environment steps $S$, neural network function approximator $Q$, neural network function approximator $\pi$, initial entropy coefficient $\alpha$, warmup steps $W$, ensemble size $E$ and Bellman weight temperature $T$}
 \State Initialize replay memory $\mathcal{D} \leftarrow \emptyset$ with capacity $N$

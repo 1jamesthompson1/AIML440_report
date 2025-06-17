@@ -30,7 +30,9 @@ To measure the sample efficient I will look at the average reward over 10 episod
 
 Information on the implementations of the algorithms and the hyperparameters can be found in appendix \ref{C:appendixA}. We see across the algorithms that the newer algorithms outperform the older algorithms in both sample efficiency (how steep the line is) and asymptotic performance (the maximum value of the line). It can be be seen that REDQ and TQC both outperform SAC even though they have the same foundations.
 
-\textit{Simple analysis of the results here. Point out that CrossQ, DroQ and RedQ are noticably betters }
+We can see that the newest algorithms are performing the best. Particularly CrossQ performs very well on the more complex environments like Humanoid and HumanoidStandup. It is also observed that CrossQ variance is a lot larger than the other algorithms which is most stark in the HumanoidStandup environment. This is likely due to the fact that CrossQ uses layer normalization which can lead to more variance in the learning process.
+
+\textit{State how well sunrise has done.}
 
 \dots
 
@@ -52,3 +54,17 @@ It is interesting to note that the most modern algorithms redq and crossq are th
 Looking at the horizontal lines can give us a rough idea of whether we are learning in realtime, faster than realtime or slower than realtime. We can see that for a more complicated task like HumanoidStandup we are learning significantly slower than realtime. Whereas the simpler environments are not so drastically slower than realtime. Given the hyperparameters are the same for all environments the only difference in environments is the action and state dimension as well as simulation time. Deeper analysis would have to be done to detangled the affect of simulation time and the action/state dimension in the wall clock time.
 
 \dots
+
+\section{Ensemble diversity}
+The key idea of DSunrise is to ensure that the diversity of the ensemble of actors is maintained. As DSunrise can be directly compared to Sunrise, we can look at the diversity of the ensemble throughout training.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\textwidth]{figures/diversity_results.png}
+    \caption{Diversity of the ensemble over time. The shaded area is a smoothed 70\% confidence interval highlighted.}
+    \label{fig:diversity}
+\end{figure}
+
+\textit{Still waiting on the completed results for this.}
+
+As one would expect the diversity of the ensemble decreases over time as the agents learn to do the task and converge towards the optimal policy. The goal of DSunrise is to maintain the diversity of the ensemble.
