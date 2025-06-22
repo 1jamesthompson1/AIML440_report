@@ -48,7 +48,7 @@ These metrics are used to determine if a base learner should be removed from the
 
 With:
 \begin{itemize}
-    \item $d_{\text{thre}}$: Diversity threshold ($\approx 0.6$)
+    \item $d_{\text{thre}}$: Diversity threshold ($\approx 0.2$)
 \end{itemize}
 
 
@@ -177,4 +177,30 @@ This algorithm adds various new hyper-parameters compared to the Sunrise algorit
     \item \textbf{Instantiation function}: This function is responsible for taking a flagged for removal base learner and attempting to instantiate a new base learner. This function can be as simple or complex as desired. The current implementation is a simple mutation of the actor network and training on a small random subset of the replay buffer. If the new base learner is not diverse enough (due to convergence to the optimal policy) then it will be removed from the ensemble. This is done to produce a smaller ensemble as training progresses.
 \end{itemize}
 
-Both the the removal check function and instantiation function can be heavily modified to create very different algorithms. I will expand and list the hyper-parameters for the removal check and instantiation functions that were proposed in \ref{sec:instantiation} and \ref{sec:removal_check}. The first two functions are the $\text{performance}_i^{(t)}$ and $\text{diversity}_i^{(t)}$ functions which are used in the removal check function. The $\text{performance}_i^{(t)}$ function has both the discount factor $\gamma$ and the window size $n$ as hyper-parameters. The $\text{diversity}_i^{(t)}$ has no hyper-parameters, yet measuring distance and diversity can be done in many different ways and so it is a hyper-parameter in itself. The removal check function has the diversity threshold $d_{\text{thre}}$ as a hyper-parameter. The instantiation function has the mutation noise $\sigma$, the diversity threshold $d_{\text{crit}}$ and the retraining steps $R$ as hyper-parameters. The retraining steps is the number of steps that the new base learner is trained for before being added to the ensemble.
+Both the the removal check function and instantiation function can be heavily modified to create very different algorithms. I will expand and list the hyper-parameters for the removal check and instantiation functions that were proposed in \ref{sec:instantiation} and \ref{sec:removal_check}. 
+
+The first two functions are the $\text{performance}_i^{(t)}$ and $\text{diversity}_i^{(t)}$ functions which are used in the removal check function.
+\begin{itemize}
+    \item \textbf{Performance function hyper-parameters}:
+    \begin{itemize}
+        \item $\gamma$: Discount factor for the performance metric. This is a hyper-parameter that can be tuned to change how much weight is given to recent performance.
+        \item $n$: Window size for the performance metric. This is how far to look back for 'recent' performance.
+    \end{itemize}
+    \item \textbf{Diversity function hyper-parameters}:
+    \begin{itemize}
+        \item $|\mathcal{S}|$: Size of the state sample used to calculate the diversity metric. This is a hyper-parameter that can be tuned to change how many states are used to calculate the diversity metric.
+    \end{itemize}
+\end{itemize}
+
+These functions are used by the removal check function. The only hyperparameter in the removal function is the diversity threshold $d_{\text{thre}}$ which determines what is considered too similar.
+
+The instantiation function has three steps each with their own hyperparameters. Firstly is mutation of the actor network which requires the mutation noise $\sigma$. Then generation of the replay subset used for retraining the new base learner. The replay subset generation has three hyper-parameters:
+\begin{itemize}
+    \item $r_{\text{top}}$: Ratio of the top transitions by reward to include in the replay subset.
+    \item $r_{\text{error}}$: Ratio of the top transitions by error to include in the replay subset.
+    \item $r_{\text{random}}$: Ratio of random transitions to include in the replay subset.
+\end{itemize}
+
+Lastly is the retraining of the new base learner which has the hyper-parameter $R$ which is the number of steps that the new base learner is trained for before being added to the ensemble. Note that training hyperparameters are the same as the base learner training hyperparameters.
+
+When this has been completed the new base learner completes a diversity check (which uses the same hyperparameters that the removal function uses) and if it is below the critical diversity threshold $d_{\text{crit}}$ then it is discarded. If it is above the critical diversity threshold then it is added to the ensemble.
